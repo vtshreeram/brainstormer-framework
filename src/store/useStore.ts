@@ -45,12 +45,28 @@ interface AppState {
 
   toggleDocumentSelection: (docType: DocumentType) => void;
   generateDocuments: () => GeneratedDocument[];
-  updateGeneratedDocument: (projectId: string, docId: string, content: string) => void;
+  generateSingleDocument: (
+    projectId: string,
+    docType: DocumentType,
+  ) => GeneratedDocument | null;
+  updateGeneratedDocument: (
+    projectId: string,
+    docId: string,
+    content: string,
+  ) => void;
 
   aiSuggestions: Record<string, AiSuggestionsResult>;
   isLoadingSuggestions: boolean;
-  fetchAiSuggestions: (docId: string, prdContent: string, userMetrics?: string) => Promise<void>;
-  acceptSuggestedMetrics: (projectId: string, docId: string, metrics: string[]) => void;
+  fetchAiSuggestions: (
+    docId: string,
+    prdContent: string,
+    userMetrics?: string,
+  ) => Promise<void>;
+  acceptSuggestedMetrics: (
+    projectId: string,
+    docId: string,
+    metrics: string[],
+  ) => void;
   clearAiSuggestions: (docId: string) => void;
 
   addToast: (toast: Omit<Toast, "id">) => void;
@@ -473,7 +489,9 @@ export const useStore = create<AppState>()(
           });
 
           if (!response.ok) {
-            throw new Error(`AI suggestions request failed: ${response.status}`);
+            throw new Error(
+              `AI suggestions request failed: ${response.status}`,
+            );
           }
 
           const result: AiSuggestionsResult = await response.json();
@@ -494,9 +512,7 @@ export const useStore = create<AppState>()(
         const doc = project?.generatedDocuments.find((d) => d.id === docId);
         if (!doc) return;
 
-        const formattedMetrics = metrics
-          .map((m) => `- ${m}`)
-          .join("\n");
+        const formattedMetrics = metrics.map((m) => `- ${m}`).join("\n");
 
         const updatedContent = doc.content.replace(
           /(##\s+Success Metrics\s*\n)([\s\S]*?)(\n##|\n#|$)/,
@@ -508,7 +524,9 @@ export const useStore = create<AppState>()(
         state.updateGeneratedDocument(
           projectId,
           docId,
-          changed ? updatedContent : doc.content + `\n\n## Success Metrics\n\n${formattedMetrics}\n`,
+          changed
+            ? updatedContent
+            : doc.content + `\n\n## Success Metrics\n\n${formattedMetrics}\n`,
         );
       },
 
@@ -559,6 +577,52 @@ export const useStore = create<AppState>()(
         }));
 
         return generatedDocs;
+      },
+
+      generateSingleDocument: (projectId: string, docType: DocumentType) => {
+        const state = get();
+        const project = state.projects.find((p) => p.id === projectId);
+        if (!project) return null;
+
+        // Check if already generated
+        if (project.generatedDocuments.some((d) => d.type === docType))
+          return null;
+
+        const titleMap: Record<DocumentType, string> = {
+          prd: "Product Requirements Document",
+          architecture: "Technical Architecture",
+          user_stories: "User Stories & Acceptance Criteria",
+          api_spec: "API Specifications",
+          roadmap: "Implementation Roadmap",
+        };
+
+        // Get responses from the current version
+        const currentVersion = project.versions.find((v) => v.isCurrent);
+        const responses = currentVersion?.responses || state.responses;
+
+        const newDoc: GeneratedDocument = {
+          id: `doc_${uuidv4().slice(0, 8)}`,
+          type: docType,
+          title: titleMap[docType],
+          content: generateDocumentContent(docType, responses, project.title),
+          generatedAt: new Date().toISOString(),
+          exportCount: 0,
+        };
+
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === projectId
+              ? {
+                  ...p,
+                  generatedDocuments: [...p.generatedDocuments, newDoc],
+                  status: "documents_generated" as const,
+                  updatedAt: new Date().toISOString(),
+                }
+              : p,
+          ),
+        }));
+
+        return newDoc;
       },
 
       addToast: (toast) => {

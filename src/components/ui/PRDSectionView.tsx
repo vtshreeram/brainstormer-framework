@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, useRef } from 'react';
-import { MarkdownRenderer as ReactMarkdown } from './MarkdownRenderer';
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { MarkdownRenderer as ReactMarkdown } from "./MarkdownRenderer";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type InlineAction = 'improve' | 'regenerate' | null;
+type InlineAction = "improve_options" | "improve_preview" | "regenerate" | null;
 
 export interface PRDSectionViewProps {
   sectionId: string;
@@ -17,16 +17,25 @@ export interface PRDSectionViewProps {
   /** Called after user confirms Replace / Accept */
   onReplace: (sectionId: string, newContent: string) => void;
   /** Fire a toast notification */
-  onToast: (message: string, type: 'success' | 'info' | 'error') => void;
+  onToast: (message: string, type: "success" | "info" | "error") => void;
   /** Whether the Ask AI panel is currently open for this section */
   isAskActive?: boolean;
+  /** ID of the section that currently has an active inline panel (for single-panel rule) */
+  activeSectionId?: string | null;
+  /** Called when this section opens/closes an inline action */
+  onActionStart?: (sectionId: string | null) => void;
 }
 
 // ─── Small icon components ─────────────────────────────────────────────────
 
 function AskIcon() {
   return (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className="w-3.5 h-3.5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -39,7 +48,12 @@ function AskIcon() {
 
 function ImproveIcon() {
   return (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className="w-3.5 h-3.5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -52,7 +66,12 @@ function ImproveIcon() {
 
 function RegenerateIcon() {
   return (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className="w-3.5 h-3.5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -63,8 +82,8 @@ function RegenerateIcon() {
   );
 }
 
-function Spinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
-  const sizes = { sm: 'w-4 h-4', md: 'w-6 h-6', lg: 'w-8 h-8' };
+function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+  const sizes = { sm: "w-4 h-4", md: "w-6 h-6", lg: "w-8 h-8" };
   return (
     <svg
       className={`${sizes[size]} animate-spin text-primary-600`}
@@ -90,11 +109,26 @@ function Spinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 
 function CopyIcon({ copied }: { copied: boolean }) {
   return copied ? (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    <svg
+      className="w-3.5 h-3.5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 13l4 4L19 7"
+      />
     </svg>
   ) : (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className="w-3.5 h-3.5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -107,7 +141,13 @@ function CopyIcon({ copied }: { copied: boolean }) {
 
 // ─── Tooltip wrapper ──────────────────────────────────────────────────────────
 
-function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
+function Tooltip({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="relative group/tip">
       {children}
@@ -135,7 +175,12 @@ interface ActionBarProps {
   isAskActive: boolean;
 }
 
-function ActionBar({ onAskAI, onImprove, onRegenerate, isAskActive }: ActionBarProps) {
+function ActionBar({
+  onAskAI,
+  onImprove,
+  onRegenerate,
+  isAskActive,
+}: ActionBarProps) {
   return (
     <div
       className="
@@ -153,8 +198,8 @@ function ActionBar({ onAskAI, onImprove, onRegenerate, isAskActive }: ActionBarP
             transition-all duration-150
             ${
               isAskActive
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600'
+                ? "bg-blue-100 text-blue-700"
+                : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
             }
           `}
         >
@@ -185,7 +230,12 @@ function ActionBar({ onAskAI, onImprove, onRegenerate, isAskActive }: ActionBarP
       {/* Regenerate */}
       <Tooltip label="Regenerate this section">
         <button
-          onClick={onRegenerate}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRegenerate();
+          }}
           className="
             flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
             text-gray-500 hover:bg-violet-50 hover:text-violet-600
@@ -212,133 +262,323 @@ function LoadingOverlay({ message }: { message: string }) {
   );
 }
 
-// ─── Improve view ─────────────────────────────────────────────────────────────
+// ─── Improve Options View ──────────────────────────────────────────────────
 
-interface ImproveViewProps {
+function ImproveOptionsView({
+  onGenerate,
+  onCancel,
+}: {
+  onGenerate: (instruction: string | null) => void;
+  onCancel: () => void;
+}) {
+  const [instruction, setInstruction] = useState("");
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mt-4 animate-in slide-in-from-top-1 fade-in duration-200">
+      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center">
+            <ImproveIcon />
+          </div>
+          <span className="text-sm font-semibold text-gray-700">
+            Improve this section
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onCancel();
+          }}
+          className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-200 rounded"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div className="p-4 space-y-5">
+        {/* Quick Improve */}
+        <div>
+          <button
+            onClick={() => onGenerate(null)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-lg font-medium hover:from-emerald-600 hover:to-teal-600 transition-all shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+            Improve Automatically
+          </button>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            AI will automatically enhance clarity, structure, and readability.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px bg-gray-200 flex-1" />
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            OR CHOOSE
+          </span>
+          <div className="h-px bg-gray-200 flex-1" />
+        </div>
+
+        {/* Guided Improve */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => onGenerate("Improve clarity")}
+            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors border border-gray-200"
+          >
+            Improve clarity
+          </button>
+          <button
+            onClick={() => onGenerate("Make it concise")}
+            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors border border-gray-200"
+          >
+            Make it concise
+          </button>
+          <button
+            onClick={() => onGenerate("Add more details")}
+            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors border border-gray-200"
+          >
+            Add more details
+          </button>
+          <button
+            onClick={() => onGenerate("Make it more professional")}
+            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors border border-gray-200"
+          >
+            Make it professional
+          </button>
+        </div>
+
+        {/* Custom Input */}
+        <div className="flex gap-2 items-center">
+          <input
+            type="text"
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            placeholder="What would you like to improve?"
+            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+            onKeyDown={(e) =>
+              e.key === "Enter" &&
+              instruction.trim() &&
+              onGenerate(instruction.trim())
+            }
+          />
+          <button
+            onClick={() => onGenerate(instruction.trim())}
+            disabled={!instruction.trim()}
+            className="px-4 py-2.5 bg-emerald-100 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Generate
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Improve Preview View ──────────────────────────────────────────────────
+
+interface ImprovePreviewViewProps {
   originalContent: string;
   improvedContent: string | null;
   isLoading: boolean;
-  onReplace: () => void;
-  onKeep: () => void;
+  onAccept: (content: string) => void;
+  onRegenerate: () => void;
+  onCancel: () => void;
 }
 
-function ImproveView({
+function ImprovePreviewView({
   originalContent,
   improvedContent,
   isLoading,
-  onReplace,
-  onKeep,
-}: ImproveViewProps) {
-  const [copiedImproved, setCopiedImproved] = useState(false);
+  onAccept,
+  onRegenerate,
+  onCancel,
+}: ImprovePreviewViewProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState("");
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
-  const handleCopyImproved = () => {
-    if (!improvedContent) return;
-    navigator.clipboard.writeText(improvedContent);
-    setCopiedImproved(true);
-    setTimeout(() => setCopiedImproved(false), 2000);
-  };
+  // Update editedContent when improvedContent changes
+  React.useEffect(() => {
+    if (improvedContent) {
+      setEditedContent(improvedContent);
+      setIsEditing(false);
+      setIsRegenerating(false);
+    }
+  }, [improvedContent]);
 
-  if (isLoading) {
+  if (isLoading && !isRegenerating) {
     return <LoadingOverlay message="Generating improved version…" />;
   }
 
   if (!improvedContent) return null;
 
   return (
-    <div className="space-y-3">
-      {/* Current version */}
-      <div className="rounded-lg border border-gray-200 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2.5 bg-gray-100 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-gray-400" />
-            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-              Current Version
-            </span>
+    <div className="mt-3 space-y-4 animate-in slide-in-from-top-1 fade-in duration-200">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Original version */}
+        <div className="rounded-lg border border-gray-200 overflow-hidden flex flex-col shadow-sm bg-white">
+          <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gray-400" />
+              <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                Original
+              </span>
+            </div>
+          </div>
+          <div className="p-5 opacity-75 overflow-y-auto max-h-[400px] flex-1 prose-sm prose-gray">
+            <ReactMarkdown>{originalContent}</ReactMarkdown>
           </div>
         </div>
-        <div className="p-4 bg-gray-50/50 opacity-75">
-          <ReactMarkdown>{originalContent}</ReactMarkdown>
-        </div>
-      </div>
 
-      {/* Arrow */}
-      <div className="flex items-center justify-center">
-        <div className="flex items-center gap-2 text-xs text-emerald-600 font-medium">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-          AI Improvement
-        </div>
-      </div>
-
-      {/* Improved version */}
-      <div className="rounded-lg border border-emerald-200 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2.5 bg-emerald-50 border-b border-emerald-200">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">
-              Improved Version
-            </span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-600 border border-emerald-200 font-medium">
-              ✨ AI Suggested
-            </span>
+        {/* Improved version */}
+        <div className="rounded-lg border border-emerald-200 overflow-hidden flex flex-col shadow-md bg-white relative">
+          <div className="px-4 py-2.5 bg-emerald-50 border-b border-emerald-200 flex-shrink-0 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
+                Improved Version
+              </span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded text-emerald-600 bg-emerald-100 border border-emerald-200 font-bold ml-1">
+                ✨ AI Generated
+              </span>
+            </div>
+            {isEditing && (
+              <span className="text-[10px] px-2 py-0.5 rounded text-gray-500 bg-white border border-gray-200 font-bold shadow-sm">
+                Editing manually
+              </span>
+            )}
           </div>
-          <button
-            onClick={handleCopyImproved}
-            className="
-              flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium
-              text-emerald-600 hover:bg-emerald-100 transition-colors
-            "
-          >
-            <CopyIcon copied={copiedImproved} />
-            {copiedImproved ? 'Copied!' : 'Copy'}
-          </button>
-        </div>
-        <div className="p-4 bg-emerald-50/30">
-          <ReactMarkdown>{improvedContent}</ReactMarkdown>
+          <div className="p-0 overflow-y-auto max-h-[400px] flex-1 flex flex-col relative">
+            {isRegenerating && isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Spinner size="md" />
+                <span className="ml-2 text-sm text-gray-500">
+                  Regenerating…
+                </span>
+              </div>
+            ) : isEditing ? (
+              <textarea
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+                className="w-full flex-1 p-5 text-sm font-mono text-gray-800 focus:outline-none resize-none min-h-[300px] bg-emerald-50/30"
+                spellCheck={false}
+              />
+            ) : (
+              <div className="p-5 bg-emerald-50/10 h-full prose-sm prose-emerald">
+                <ReactMarkdown>{editedContent}</ReactMarkdown>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-3 pt-1">
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
         <button
-          onClick={onReplace}
-          className="
-            flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold
-            bg-emerald-600 text-white hover:bg-emerald-700
-            transition-colors shadow-sm
-          "
+          type="button"
+          onClick={() => {
+            onCancel();
+          }}
+          disabled={isRegenerating}
+          className="px-4 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-          Replace with Improved
+          Cancel
         </button>
-        <button
-          onClick={onKeep}
-          className="
-            px-4 py-2 rounded-lg text-sm font-medium
-            text-gray-600 hover:bg-gray-100
-            transition-colors border border-gray-200
-          "
-        >
-          Keep Original
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setIsEditing((prev) => !prev);
+            }}
+            disabled={isRegenerating}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 bg-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isEditing ? "Done Editing" : "Edit Manually"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsRegenerating(true);
+              onRegenerate();
+            }}
+            disabled={isRegenerating}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-emerald-700 hover:bg-emerald-100 border border-emerald-200 bg-emerald-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRegenerating ? (
+              <Spinner size="sm" />
+            ) : (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            )}
+            Regenerate
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onAccept(editedContent);
+            }}
+            disabled={isRegenerating}
+            className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            Accept Changes
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
 // ─── Regenerate view ──────────────────────────────────────────────────────────
 
 interface RegenerateViewProps {
@@ -393,7 +633,7 @@ function RegenerateView({
             "
           >
             <CopyIcon copied={copied} />
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? "Copied!" : "Copy"}
           </button>
         </div>
         <div className="p-4 bg-violet-50/20">
@@ -411,7 +651,12 @@ function RegenerateView({
             transition-colors shadow-sm
           "
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -433,7 +678,12 @@ function RegenerateView({
           Regenerate Again
         </button>
         <button
-          onClick={onCancel}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onCancel();
+          }}
           className="
             px-4 py-2 rounded-lg text-sm font-medium
             text-gray-600 hover:bg-gray-100
@@ -457,49 +707,104 @@ export function PRDSectionView({
   onReplace,
   onToast,
   isAskActive = false,
+  activeSectionId,
+  onActionStart,
 }: PRDSectionViewProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [action, setAction] = useState<InlineAction>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [improvedContent, setImprovedContent] = useState<string | null>(null);
-  const [regeneratedContent, setRegeneratedContent] = useState<string | null>(null);
+  const [regeneratedContent, setRegeneratedContent] = useState<string | null>(
+    null,
+  );
   const regenAttemptRef = useRef(0);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const showBar = isHovered || action !== null || isAskActive;
 
+  // ── Split content into heading line and body ────────────────────────────────
+  const headingLineEnd = content.indexOf("\n");
+  const headingMarkdown =
+    headingLineEnd !== -1 ? content.slice(0, headingLineEnd + 1) : content;
+  const bodyMarkdown =
+    headingLineEnd !== -1 ? content.slice(headingLineEnd + 1) : "";
+
+  // ── Single active panel rule ────────────────────────────────────────────────
+  useEffect(() => {
+    if (
+      activeSectionId !== undefined &&
+      activeSectionId !== null &&
+      activeSectionId !== sectionId &&
+      action !== null
+    ) {
+      setAction(null);
+      setImprovedContent(null);
+      setRegeneratedContent(null);
+      setIsLoading(false);
+      regenAttemptRef.current = 0;
+    }
+  }, [activeSectionId, sectionId]); // intentionally minimal deps to avoid loops
+
+  // ── Scroll panel into view when it opens ────────────────────────────────────
+  useEffect(() => {
+    if (action !== null && panelRef.current) {
+      // Small delay to let the DOM render the panel first
+      const timer = setTimeout(() => {
+        panelRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [action]);
+
   // ── Improve ─────────────────────────────────────────────────────────────────
 
-  const handleImprove = useCallback(async () => {
-    setAction('improve');
-    setIsLoading(true);
+  const lastInstructionRef = useRef<string | null>(null);
+
+  const handleImproveOptions = useCallback(() => {
+    onActionStart?.(sectionId);
+    setAction("improve_options");
     setImprovedContent(null);
+  }, [sectionId, onActionStart]);
 
-    try {
-      const res = await fetch('/api/section-improve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          section_heading: heading,
-          section_content: content,
-        }),
-      });
+  const handleGenerateImprove = useCallback(
+    async (instruction: string | null) => {
+      setAction("improve_preview");
+      setIsLoading(true);
+      setImprovedContent(null);
+      lastInstructionRef.current = instruction;
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Request failed: ${res.status}`);
+      try {
+        const res = await fetch("/api/section-improve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            section_heading: heading,
+            section_content: content,
+            instruction: instruction,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `Request failed: ${res.status}`);
+        }
+
+        const data = await res.json();
+        setImprovedContent(data.improved_content ?? null);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error("[PRDSectionView] improve error:", message);
+        onToast("Failed to improve section. Please try again.", "error");
+        setAction("improve_options");
+      } finally {
+        setIsLoading(false);
       }
-
-      const data = await res.json();
-      setImprovedContent(data.improved_content ?? null);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('[PRDSectionView] improve error:', message);
-      onToast('Failed to improve section. Please try again.', 'error');
-      setAction(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [heading, content, onToast]);
+    },
+    [heading, content, onToast],
+  );
 
   // ── Regenerate ──────────────────────────────────────────────────────────────
 
@@ -509,9 +814,9 @@ export function PRDSectionView({
       setRegeneratedContent(null);
 
       try {
-        const res = await fetch('/api/section-regenerate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch("/api/section-regenerate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             section_heading: heading,
             section_content: content,
@@ -527,9 +832,9 @@ export function PRDSectionView({
         const data = await res.json();
         setRegeneratedContent(data.regenerated_content ?? null);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        console.error('[PRDSectionView] regenerate error:', message);
-        onToast('Failed to regenerate section. Please try again.', 'error');
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error("[PRDSectionView] regenerate error:", message);
+        onToast("Failed to regenerate section. Please try again.", "error");
         if (attempt === 0) setAction(null);
       } finally {
         setIsLoading(false);
@@ -539,10 +844,11 @@ export function PRDSectionView({
   );
 
   const handleRegenerate = useCallback(() => {
+    onActionStart?.(sectionId);
     regenAttemptRef.current = 0;
-    setAction('regenerate');
+    setAction("regenerate");
     callRegenerate(0);
-  }, [callRegenerate]);
+  }, [callRegenerate, sectionId, onActionStart]);
 
   const handleRegenerateAgain = useCallback(() => {
     regenAttemptRef.current += 1;
@@ -551,22 +857,27 @@ export function PRDSectionView({
 
   // ── Confirm actions ─────────────────────────────────────────────────────────
 
-  const handleReplaceImproved = useCallback(() => {
-    if (!improvedContent) return;
-    onReplace(sectionId, improvedContent);
-    onToast('Section updated successfully', 'success');
-    setAction(null);
-    setImprovedContent(null);
-  }, [improvedContent, sectionId, onReplace, onToast]);
+  const handleReplaceImproved = useCallback(
+    (editedContent: string) => {
+      if (!editedContent) return;
+      onReplace(sectionId, editedContent);
+      onToast("Changes applied successfully", "success");
+      setAction(null);
+      setImprovedContent(null);
+      onActionStart?.(null);
+    },
+    [improvedContent, sectionId, onReplace, onToast, onActionStart],
+  );
 
   const handleAcceptRegenerated = useCallback(() => {
     if (!regeneratedContent) return;
     onReplace(sectionId, regeneratedContent);
-    onToast('New version generated', 'success');
+    onToast("New version generated", "success");
     setAction(null);
     setRegeneratedContent(null);
     regenAttemptRef.current = 0;
-  }, [regeneratedContent, sectionId, onReplace, onToast]);
+    onActionStart?.(null);
+  }, [regeneratedContent, sectionId, onReplace, onToast, onActionStart]);
 
   const handleCancel = useCallback(() => {
     setAction(null);
@@ -574,7 +885,8 @@ export function PRDSectionView({
     setRegeneratedContent(null);
     setIsLoading(false);
     regenAttemptRef.current = 0;
-  }, []);
+    onActionStart?.(null);
+  }, [onActionStart]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -584,47 +896,62 @@ export function PRDSectionView({
         relative rounded-xl transition-all duration-200
         ${
           action !== null
-            ? action === 'improve'
-              ? 'ring-1 ring-emerald-200 bg-emerald-50/10'
-              : 'ring-1 ring-violet-200 bg-violet-50/10'
+            ? action === "improve_preview" || action === "improve_options"
+              ? "ring-1 ring-emerald-200 bg-emerald-50/10"
+              : "ring-1 ring-violet-200 bg-violet-50/10"
             : isAskActive
-            ? 'ring-1 ring-blue-200 bg-blue-50/10'
-            : isHovered
-            ? 'ring-1 ring-gray-200 bg-gray-50/60'
-            : ''
+              ? "ring-1 ring-blue-200 bg-blue-50/10"
+              : isHovered
+                ? "ring-1 ring-gray-200 bg-gray-50/60"
+                : ""
         }
       `}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* ── Action bar (hover-visible) ──────────────────────────────────────── */}
-      <div
-        className={`
-          absolute top-3 right-3 z-10 transition-all duration-200
-          ${showBar && action === null ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1 pointer-events-none'}
-        `}
-      >
-        <ActionBar
-          onAskAI={() => onAskAI(sectionId, heading, content)}
-          onImprove={handleImprove}
-          onRegenerate={handleRegenerate}
-          isAskActive={isAskActive}
-        />
+      {/* ── Heading area with action bar ────────────────────────────────────── */}
+      <div className="relative">
+        <div className="px-5 pt-5 pb-1">
+          <ReactMarkdown>{headingMarkdown}</ReactMarkdown>
+        </div>
+
+        {/* Action bar (hover-visible, near heading) */}
+        <div
+          className={`
+            absolute top-3 right-3 z-10 transition-all duration-200
+            ${showBar && action === null ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"}
+          `}
+        >
+          <ActionBar
+            onAskAI={() => onAskAI(sectionId, heading, content)}
+            onImprove={handleImproveOptions}
+            onRegenerate={handleRegenerate}
+            isAskActive={isAskActive}
+          />
+        </div>
       </div>
 
       {/* ── Active action label bar ─────────────────────────────────────────── */}
-      {action !== null && (
+      {action !== null && action !== "improve_options" && (
         <div
           className={`
-            flex items-center justify-between px-4 py-2 rounded-t-xl
-            ${action === 'improve' ? 'bg-emerald-100/80 border-b border-emerald-200' : 'bg-violet-100/80 border-b border-violet-200'}
+            flex items-center justify-between px-4 py-2 mx-5 rounded-lg mb-2
+            ${action === "improve_preview" ? "bg-emerald-100/80 border border-emerald-200" : "bg-violet-100/80 border border-violet-200"}
           `}
         >
           <div
-            className={`flex items-center gap-2 text-xs font-semibold ${action === 'improve' ? 'text-emerald-700' : 'text-violet-700'}`}
+            className={`flex items-center gap-2 text-xs font-semibold ${action === "improve_preview" ? "text-emerald-700" : "text-violet-700"}`}
           >
-            {action === 'improve' ? <ImproveIcon /> : <RegenerateIcon />}
-            <span>{action === 'improve' ? 'Improving section…' : 'Regenerating section…'}</span>
+            {action === "improve_preview" ? (
+              <ImproveIcon />
+            ) : (
+              <RegenerateIcon />
+            )}
+            <span>
+              {action === "improve_preview"
+                ? "Improving section…"
+                : "Regenerating section…"}
+            </span>
           </div>
           {!isLoading && (
             <button
@@ -632,7 +959,7 @@ export function PRDSectionView({
               className={`
                 text-xs font-medium underline underline-offset-2
                 transition-colors
-                ${action === 'improve' ? 'text-emerald-600 hover:text-emerald-800' : 'text-violet-600 hover:text-violet-800'}
+                ${action === "improve_preview" ? "text-emerald-600 hover:text-emerald-800" : "text-violet-600 hover:text-violet-800"}
               `}
             >
               Cancel
@@ -641,35 +968,62 @@ export function PRDSectionView({
         </div>
       )}
 
-      {/* ── Content area ────────────────────────────────────────────────────── */}
-      <div
-        className={`
-          p-5
-          ${action !== null ? 'pt-4' : 'pt-5'}
-        `}
-      >
-        {action === null && <ReactMarkdown>{content}</ReactMarkdown>}
+      {/* ── Inline panel area (rendered between heading and body) ───────────── */}
+      {action !== null && (
+        <div
+          ref={panelRef}
+          className="px-5 transition-all duration-200 ease-in-out"
+        >
+          {action === "improve_options" && (
+            <ImproveOptionsView
+              onGenerate={handleGenerateImprove}
+              onCancel={handleCancel}
+            />
+          )}
 
-        {action === 'improve' && (
-          <ImproveView
-            originalContent={content}
-            improvedContent={improvedContent}
-            isLoading={isLoading}
-            onReplace={handleReplaceImproved}
-            onKeep={handleCancel}
-          />
+          {action === "improve_preview" && (
+            <ImprovePreviewView
+              originalContent={content}
+              improvedContent={improvedContent}
+              isLoading={isLoading}
+              onAccept={handleReplaceImproved}
+              onRegenerate={() =>
+                handleGenerateImprove(lastInstructionRef.current)
+              }
+              onCancel={handleCancel}
+            />
+          )}
+
+          {action === "regenerate" && (
+            <RegenerateView
+              regeneratedContent={regeneratedContent}
+              isLoading={isLoading}
+              onAccept={handleAcceptRegenerated}
+              onRegenerateAgain={handleRegenerateAgain}
+              onCancel={handleCancel}
+            />
+          )}
+        </div>
+      )}
+
+      {/* ── Body content ────────────────────────────────────────────────────── */}
+      {(action === null || action === "improve_options") &&
+        bodyMarkdown.trim() && (
+          <div
+            className={`
+            px-5 pb-5
+            ${action === "improve_options" ? "pt-3 opacity-60" : "pt-1"}
+            transition-opacity duration-200
+          `}
+          >
+            <ReactMarkdown>{bodyMarkdown}</ReactMarkdown>
+          </div>
         )}
 
-        {action === 'regenerate' && (
-          <RegenerateView
-            regeneratedContent={regeneratedContent}
-            isLoading={isLoading}
-            onAccept={handleAcceptRegenerated}
-            onRegenerateAgain={handleRegenerateAgain}
-            onCancel={handleCancel}
-          />
-        )}
-      </div>
+      {/* Bottom padding when panel is active and body is hidden */}
+      {action !== null && action !== "improve_options" && (
+        <div className="pb-5" />
+      )}
     </div>
   );
 }
