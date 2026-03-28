@@ -77,11 +77,9 @@ export default function SettingsPage() {
   
   const handleDeleteProject = () => {
     setIsDeleting(true);
-    setTimeout(() => {
-      deleteProject(projectId);
-      addToast({ type: 'success', message: 'Project deleted' });
-      router.push('/');
-    }, 500);
+    deleteProject(projectId);
+    addToast({ type: 'success', message: 'Project deleted' });
+    router.push('/');
   };
 
   const handleRestoreVersion = () => {

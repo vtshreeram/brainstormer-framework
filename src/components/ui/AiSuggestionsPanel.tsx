@@ -1,5 +1,5 @@
-'use client';
-
+"use client";
+import { Check, Plus } from "lucide-react";
 import React, { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { AiProductSuggestion, AiSuggestionsResult } from '@/types';
@@ -280,7 +280,7 @@ function SuggestionCard({ suggestion, index, onAddToDocument, docTypeLabel }: Su
               }
             `}
           >
-            {added ? '✓ Added' : `+ Add to ${docTypeLabel ?? 'Document'}`}
+            {added ? <><Check className="w-3 h-3 mr-1 inline" /> Added</> : <><Plus className="w-3 h-3 mr-1 inline" /> Add to {docTypeLabel ?? 'Document'}</>}
           </button>
         )}
       </div>

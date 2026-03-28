@@ -8,6 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import Link from "next/link";
+import { FileText, LayoutTemplate, PenTool, Link2, Map } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useStore } from "@/store/useStore";
 import {
@@ -99,20 +100,16 @@ export default function DocumentsPage() {
   );
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
 
-  const allDocumentTypes: {
-    type: DocumentType;
-    icon: string;
-    label: string;
-  }[] = [
-    { type: "prd", icon: "📋", label: "Product Requirements Document" },
-    { type: "architecture", icon: "🏗️", label: "Technical Architecture" },
+  const allDocumentTypes: { type: DocumentType; icon: React.ReactNode; label: string }[] = [
+    { type: "prd", icon: <FileText className="w-4 h-4" />, label: "Product Requirements Document" },
+    { type: "architecture", icon: <LayoutTemplate className="w-4 h-4" />, label: "Technical Architecture" },
     {
       type: "user_stories",
-      icon: "📝",
+      icon: <PenTool className="w-4 h-4" />,
       label: "User Stories & Acceptance Criteria",
     },
-    { type: "api_spec", icon: "🔗", label: "API Specifications" },
-    { type: "roadmap", icon: "🗺️", label: "Implementation Roadmap" },
+    { type: "api_spec", icon: <Link2 className="w-4 h-4" />, label: "API Specifications" },
+    { type: "roadmap", icon: <Map className="w-4 h-4" />, label: "Implementation Roadmap" },
   ];
 
   const generatedTypes = useMemo(
@@ -130,7 +127,7 @@ export default function DocumentsPage() {
       setGeneratingTypes((prev) => new Set(prev).add(docType));
 
       // Simulate a small delay so the user sees the loading state
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      // Removed artificial delay
 
       const newDoc = generateSingleDocument(projectId, docType);
 
@@ -157,7 +154,7 @@ export default function DocumentsPage() {
 
     for (const dt of availableDocTypes) {
       setGeneratingTypes((prev) => new Set(prev).add(dt.type));
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // Removed artificial delay
       const newDoc = generateSingleDocument(projectId, dt.type);
       setGeneratingTypes((prev) => {
         const next = new Set(prev);
@@ -213,12 +210,12 @@ export default function DocumentsPage() {
     roadmap: "Implementation Roadmap",
   };
 
-  const typeIcons: Record<string, string> = {
-    prd: "📋",
-    architecture: "🏗️",
-    user_stories: "📝",
-    api_spec: "🔗",
-    roadmap: "🗺️",
+  const typeIcons: Record<string, React.ReactNode> = {
+    prd: <FileText className="w-4 h-4" />,
+    architecture: <LayoutTemplate className="w-4 h-4" />,
+    user_stories: <PenTool className="w-4 h-4" />,
+    api_spec: <Link2 className="w-4 h-4" />,
+    roadmap: <Map className="w-4 h-4" />,
   };
 
   // Auto-trigger AI suggestions whenever a document is opened for the first time

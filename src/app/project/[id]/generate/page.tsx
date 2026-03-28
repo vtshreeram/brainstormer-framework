@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useStore } from '@/store/useStore';
 import { Button } from '@/components/ui';
 import { DocumentType } from '@/types';
+import { FileText, LayoutTemplate, PenTool, Link2, Map } from 'lucide-react';
 
 export default function GeneratePage() {
   const params = useParams();
@@ -38,7 +39,7 @@ export default function GeneratePage() {
   const handleGenerate = async () => {
     setIsGeneratingLocal(true);
     
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Removed artificial delay
     
     generateDocuments();
     
@@ -47,11 +48,11 @@ export default function GeneratePage() {
   };
   
   const documentTypes = [
-    { type: 'prd' as DocumentType, icon: '📋', label: 'Product Requirements Document', desc: 'Problem statement, personas, feature specs, success metrics' },
-    { type: 'architecture' as DocumentType, icon: '🏗️', label: 'Technical Architecture', desc: 'Stack recommendations, data model, system diagram' },
-    { type: 'user_stories' as DocumentType, icon: '📝', label: 'User Stories & Acceptance Criteria', desc: 'Prioritized stories with clear acceptance criteria' },
-    { type: 'api_spec' as DocumentType, icon: '🔗', label: 'API Specifications', desc: 'Endpoints, authentication, rate limiting' },
-    { type: 'roadmap' as DocumentType, icon: '🗺️', label: 'Implementation Roadmap', desc: 'MVP phase, secondary features, sequencing rationale' }
+    { type: 'prd' as DocumentType, icon: <FileText className="w-5 h-5 text-gray-700" />, label: 'Product Requirements Document', desc: 'Problem statement, personas, feature specs, success metrics' },
+    { type: 'architecture' as DocumentType, icon: <LayoutTemplate className="w-5 h-5 text-gray-700" />, label: 'Technical Architecture', desc: 'Stack recommendations, data model, system diagram' },
+    { type: 'user_stories' as DocumentType, icon: <PenTool className="w-5 h-5 text-gray-700" />, label: 'User Stories & Acceptance Criteria', desc: 'Prioritized stories with clear acceptance criteria' },
+    { type: 'api_spec' as DocumentType, icon: <Link2 className="w-5 h-5 text-gray-700" />, label: 'API Specifications', desc: 'Endpoints, authentication, rate limiting' },
+    { type: 'roadmap' as DocumentType, icon: <Map className="w-5 h-5 text-gray-700" />, label: 'Implementation Roadmap', desc: 'MVP phase, secondary features, sequencing rationale' }
   ];
   
   const selectedCount = selectedDocuments.filter(d => d.selected).length;
@@ -61,7 +62,7 @@ export default function GeneratePage() {
       <header className="bg-white border-b">
         <div className="max-w-3xl mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
-            <Link href={`/project/${projectId}/review`} className="text-gray-500 hover:text-gray-700">
+            <Link href={`/project/${projectId}/review`} className="text-gray-500 hover:text-gray-600">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -92,7 +93,7 @@ export default function GeneratePage() {
                   className={`
                     w-full p-4 border-2 text-left transition-all
                     ${isSelected 
-                      ? 'border-primary-500 bg-primary-50' 
+                      ? 'border-primary-600 bg-primary-10' 
                       : 'border-gray-200 hover:border-gray-300'
                     }
                   `}
@@ -100,7 +101,7 @@ export default function GeneratePage() {
                   <div className="flex items-start gap-4">
                     <div className={`
                       w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5
-                      ${isSelected ? 'bg-primary-500 text-white' : 'bg-gray-200'}
+                      ${isSelected ? 'bg-primary-600 text-white' : 'bg-gray-200'}
                     `}>
                       {isSelected && (
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,10 +133,12 @@ export default function GeneratePage() {
             disabled={selectedCount === 0}
             isLoading={isGeneratingLocal}
           >
-            Generate {selectedCount > 0 ? `${selectedCount} ` : ''}Document{selectedCount !== 1 ? 's' : ''}
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+            {isGeneratingLocal ? 'Generating...' : `Generate ${selectedCount > 0 ? `${selectedCount} ` : ''}Document${selectedCount !== 1 ? 's' : ''}`}
+            {!isGeneratingLocal && (
+              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            )}
           </Button>
         </div>
       </main>

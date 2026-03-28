@@ -1,5 +1,5 @@
 "use client";
-
+import { AlertTriangle, Clock, CheckCircle } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -391,7 +391,7 @@ export default function ProjectPage() {
             onClick={() => setIsDangerZoneExpanded(!isDangerZoneExpanded)}
           >
             <span className="font-bold text-red-700 text-sm">
-              ⚠ Danger Zone
+              <AlertTriangle className="w-4 h-4 mr-2" /> Danger Zone
             </span>
             <svg
               className={`w-4 h-4 text-red-500 transition-transform duration-200 ${isDangerZoneExpanded ? "rotate-180" : ""}`}

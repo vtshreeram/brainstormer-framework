@@ -1,5 +1,5 @@
 "use client";
-
+import { Sparkles, RefreshCw } from "lucide-react";
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { MarkdownRenderer as ReactMarkdown } from "./MarkdownRenderer";
 
@@ -471,7 +471,7 @@ function ImprovePreviewView({
                 Improved Version
               </span>
               <span className="text-[10px] px-1.5 py-0.5 rounded text-emerald-600 bg-emerald-100 border border-emerald-200 font-bold ml-1">
-                ✨ AI Generated
+                AI Generated
               </span>
             </div>
             {isEditing && (
@@ -629,7 +629,7 @@ function RegenerateView({
               New Version
             </span>
             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 border border-violet-200 font-medium">
-              🔄 Regenerated
+              <RefreshCw className="w-4 h-4 mr-1 inline" /> Regenerated
             </span>
           </div>
           <button
