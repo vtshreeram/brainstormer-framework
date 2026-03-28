@@ -1,229 +1,463 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { useStore } from '@/store/useStore';
-import { getStatusLabel, formatDate } from '@/data/mockData';
-import { Button } from '@/components/ui';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useStore } from "@/store/useStore";
+import { getStatusLabel, formatDate } from "@/data/mockData";
+import { Button, Modal } from "@/components/ui";
 
 export default function ProjectPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
-  
-  const { 
-    projects, 
-    setCurrentProject, 
+
+  const {
+    projects,
+    setCurrentProject,
+    setCurrentStep,
     getCompletionPercentage,
     resetWizard,
-    deleteProject 
+    deleteProject,
   } = useStore();
-  
-  const project = projects.find(p => p.id === projectId);
-  
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDiscoveryExpanded, setIsDiscoveryExpanded] = useState(false);
+  const [isDangerZoneExpanded, setIsDangerZoneExpanded] = useState(false);
+
+  const project = projects.find((p) => p.id === projectId);
+
   useEffect(() => {
     if (projectId) {
       setCurrentProject(projectId);
     }
   }, [projectId, setCurrentProject]);
-  
+
   if (!project) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Project not found</h2>
-          <Link href="/" className="text-primary-600 hover:text-primary-700">
-            Return to Dashboard
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center card p-10">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Project not found
+          </h2>
+          <p className="text-gray-500 mb-6">
+            This project may have been deleted or doesn't exist.
+          </p>
+          <Link href="/">
+            <Button>Return to Dashboard</Button>
           </Link>
         </div>
       </div>
     );
   }
-  
+
   const completionPercentage = getCompletionPercentage();
-  const currentVersion = project.versions.find(v => v.isCurrent);
-  
+  const currentVersion = project.versions.find((v) => v.isCurrent);
+  const docsGenerated = project.generatedDocuments.length > 0;
+  const allDocsGenerated = project.generatedDocuments.length >= 5;
+  const prdDoc = project.generatedDocuments.find((d) => d.type === "prd");
+
   const handleStartWizard = () => {
     resetWizard();
+    setCurrentStep(0);
     router.push(`/project/${projectId}/wizard`);
   };
-  
+
+  const handleGoToStep = (stepIndex: number) => {
+    setCurrentStep(stepIndex);
+    router.push(`/project/${projectId}/wizard`);
+  };
+
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this project? This cannot be undone.')) {
-      deleteProject(projectId);
-      router.push('/');
-    }
+    deleteProject(projectId);
+    setIsDeleteModalOpen(false);
+    router.push("/");
   };
-  
-  const getNextAction = () => {
-    switch (project.status) {
-      case 'draft':
-      case 'in_progress':
-        return {
-          label: 'Continue Discovery',
-          onClick: handleStartWizard,
-          description: 'Complete the discovery wizard to define your product'
-        };
-      case 'discovery_complete':
-        return {
-          label: 'Review & Generate',
-          onClick: () => router.push(`/project/${projectId}/review`),
-          description: 'Review responses and generate documents'
-        };
-      case 'documents_generated':
-        return {
-          label: 'View Documents',
-          onClick: () => router.push(`/project/${projectId}/documents`),
-          description: 'View and export your generated documentation'
-        };
-      default:
-        return {
-          label: 'Continue Discovery',
-          onClick: handleStartWizard,
-          description: 'Complete the discovery wizard'
-        };
-    }
-  };
-  
-  const nextAction = getNextAction();
-  
+
   return (
-    <div className="min-h-screen">
-      <header className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-gray-500 hover:text-gray-700">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{project.title}</h1>
-                <p className="text-sm text-gray-500">
-                  {currentVersion?.versionNumber || 'v0.1'} · Last edited {formatDate(project.updatedAt)}
-                </p>
+    <div className="min-h-screen bg-gray-50/50">
+      {/* Breadcrumb Navigation */}
+      <div className="bg-white border-b sticky top-0 z-20">
+        <div className="max-w-5xl mx-auto px-6 py-2 flex items-center gap-2 text-xs font-medium text-gray-500">
+          <Link href="/" className="hover:text-primary-600 transition-colors">
+            Projects
+          </Link>
+          <svg
+            className="w-3.5 h-3.5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+          <span className="text-gray-900 truncate">{project.title}</span>
+        </div>
+      </div>
+
+      {/* 1. Header (Project Name + Open PRD) */}
+      <header className="bg-white border-b shadow-sm relative z-10">
+        <div className="max-w-5xl mx-auto px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1.5 tracking-tight">
+                {project.title}
+              </h1>
+
+              {/* Compact Metadata Display */}
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                <div className="flex items-center gap-1 font-medium text-gray-600">
+                  <svg
+                    className="w-3.5 h-3.5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    />
+                  </svg>
+                  {currentVersion?.versionNumber || "v1.0"}
+                </div>
+                <div className="flex items-center gap-1 text-gray-500">
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  Edited {formatDate(project.updatedAt)}
+                </div>
+                <span
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold border ${
+                    project.status === "discovery_complete"
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : project.status === "documents_generated"
+                        ? "bg-purple-50 text-purple-700 border-purple-200"
+                        : "bg-blue-50 text-blue-700 border-blue-200"
+                  }`}
+                >
+                  {getStatusLabel(project.status)}
+                </span>
               </div>
             </div>
-            
-            <div className="flex items-center gap-3">
-              <span className={`text-xs font-medium px-2.5 py-1 rounded ${
-                project.status === 'discovery_complete' ? 'bg-green-100 text-green-700' :
-                project.status === 'documents_generated' ? 'bg-purple-100 text-purple-700' :
-                'bg-gray-100 text-gray-700'
-              }`}>
-                {getStatusLabel(project.status)}
-              </span>
+
+            <div className="flex items-center gap-2">
+              {prdDoc && (
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    router.push(`/project/${projectId}/documents?type=prd`)
+                  }
+                  className="shadow-sm"
+                >
+                  Open PRD
+                </Button>
+              )}
               <Link href={`/project/${projectId}/settings`}>
-                <Button variant="ghost" size="sm">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                <Button variant="secondary" size="sm" className="bg-white">
+                  Settings
                 </Button>
               </Link>
             </div>
           </div>
         </div>
       </header>
-      
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <div className="card p-8 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Discovery Progress</h2>
-              <p className="text-sm text-gray-500">{completionPercentage}% complete</p>
-            </div>
-            <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary-500 rounded-full transition-all duration-500"
-                style={{ width: `${completionPercentage}%` }}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-7 gap-2 mb-6">
-            {currentVersion && Object.entries(currentVersion.responses).map(([stepId, response], index) => (
-              <div 
-                key={stepId}
-                className={`text-center p-3 rounded-lg ${
-                  response.isComplete ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
-                }`}
+      <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+
+        {/* 4. Generated Documents (main section) */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-gray-900">
+              Generated Documents
+            </h2>
+            {/* 5. Improve "Generate Remaining Documents" */}
+            {docsGenerated && !allDocsGenerated && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push(`/project/${projectId}/generate`)}
+                className="text-primary-600"
               >
-                <span className="text-xs font-medium">
-                  {response.isComplete ? (
-                    <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    index + 1
-                  )}
-                </span>
-              </div>
-            ))}
-            {(!currentVersion || Object.keys(currentVersion.responses).length === 0) && (
-              <>
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <div key={i} className="text-center p-3 rounded-lg bg-gray-100 text-gray-400">
-                    <span className="text-xs font-medium">{i + 1}</span>
-                  </div>
-                ))}
-              </>
+                Generate Remaining Documents
+              </Button>
             )}
           </div>
-          
-          <Button onClick={nextAction.onClick} className="w-full">
-            {nextAction.label}
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Button>
-          <p className="text-sm text-gray-500 text-center mt-3">{nextAction.description}</p>
-        </div>
-        
-        {project.generatedDocuments.length > 0 && (
-          <div className="card p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Generated Documents</h2>
-            <div className="space-y-3">
-              {project.generatedDocuments.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span className="font-medium text-gray-900">{doc.title}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400">
-                      Exported {doc.exportCount} times
-                    </span>
-                    <Link href={`/project/${projectId}/documents`}>
-                      <Button variant="secondary" size="sm">View</Button>
-                    </Link>
-                  </div>
-                </div>
-              ))}
+
+          <div className="card overflow-hidden border border-gray-200 shadow-sm bg-white">
+            {project.generatedDocuments.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {project.generatedDocuments.map((doc) => {
+                  const isPRD = doc.type === "prd";
+                  return (
+                    <div
+                      key={doc.id}
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 hover:bg-gray-50 transition-colors ${
+                        isPRD
+                          ? "bg-primary-50/20 border-l-2 border-primary-500"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-3 sm:mb-0">
+                        <div
+                          className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 ${isPRD ? "bg-primary-100" : "bg-gray-100"}`}
+                        >
+                          <svg
+                            className={`w-4 h-4 ${isPRD ? "text-primary-600" : "text-gray-500"}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-gray-900 text-sm">
+                              {doc.title}
+                            </h3>
+                            {isPRD && (
+                              <span className="text-[10px] uppercase font-bold text-primary-600 bg-primary-100 px-1.5 rounded">
+                                Primary
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[11px] font-medium text-green-700 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">
+                              Generated
+                            </span>
+                            <span className="text-xs text-gray-400 font-medium">
+                              Exported {doc.exportCount} times
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-3 text-gray-600"
+                          onClick={() =>
+                            router.push(`/project/${projectId}/generate`)
+                          }
+                        >
+                          Regenerate
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="h-8 px-4"
+                          onClick={() =>
+                            router.push(
+                              `/project/${projectId}/documents?type=${doc.type}`,
+                            )
+                          }
+                        >
+                          View
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-gray-50/50">
+                <p className="text-gray-500 mb-4 text-sm">
+                  You haven't generated any documents for this project yet.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => router.push(`/project/${projectId}/generate`)}
+                >
+                  Generate First Document
+                </Button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* 6. Discovery (collapsed) */}
+        <section className="card shadow-sm border border-gray-200 overflow-hidden bg-white">
+          <div
+            className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors select-none"
+            onClick={() => setIsDiscoveryExpanded(!isDiscoveryExpanded)}
+          >
+            <div className="flex items-center gap-3">
+              <h2 className="text-base font-bold text-gray-900">
+                Discovery Progress
+              </h2>
+              <span className="text-sm text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded">
+                {completionPercentage === 100
+                  ? "Completed (7/7 steps)"
+                  : `${completionPercentage}% complete`}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-7 px-3 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStartWizard();
+                }}
+              >
+                Edit Answers
+              </Button>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isDiscoveryExpanded ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
             </div>
           </div>
-        )}
-        
-        {project.description && (
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Description</h2>
-            <p className="text-gray-600">{project.description}</p>
-          </div>
-        )}
-        
-        <div className="mt-8 pt-6 border-t">
-          <button 
-            onClick={handleDelete}
-            className="text-sm text-red-600 hover:text-red-700"
+
+          {isDiscoveryExpanded && (
+            <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                {currentVersion &&
+                  Object.entries(currentVersion.responses).map(
+                    ([stepId, response], index) => (
+                      <button
+                        key={stepId}
+                        onClick={() => handleGoToStep(index)}
+                        title={`Go to step ${index + 1}`}
+                        className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-lg transition-all border ${
+                          response.isComplete
+                            ? "bg-white text-green-700 hover:bg-green-50 border-green-200 shadow-sm"
+                            : "bg-gray-50 text-gray-400 hover:bg-gray-100 border-gray-200"
+                        }`}
+                      >
+                        <span className="text-sm font-bold mb-0.5">
+                          {response.isComplete ? (
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          ) : (
+                            <span>{index + 1}</span>
+                          )}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wider font-semibold opacity-70">
+                          Step {index + 1}
+                        </span>
+                      </button>
+                    ),
+                  )}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* 8. Danger Zone (collapsed) */}
+        <section className="card shadow-sm border border-red-200 overflow-hidden">
+          <div
+            className="flex items-center justify-between p-4 bg-red-50/50 cursor-pointer hover:bg-red-50 transition-colors select-none"
+            onClick={() => setIsDangerZoneExpanded(!isDangerZoneExpanded)}
           >
-            Delete Project
-          </button>
-        </div>
+            <span className="font-bold text-red-700 text-sm">
+              ⚠ Danger Zone
+            </span>
+            <svg
+              className={`w-4 h-4 text-red-500 transition-transform duration-200 ${isDangerZoneExpanded ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+
+          {isDangerZoneExpanded && (
+            <div className="p-4 bg-white border-t border-red-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-gray-900 text-sm">
+                  Delete Project
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Permanently remove this project, its history, and all
+                  generated documents. This action cannot be undone.
+                </p>
+              </div>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="whitespace-nowrap"
+              >
+                Delete Project
+              </Button>
+            </div>
+          )}
+        </section>
       </main>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete Project"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600 text-sm">
+            Are you sure you want to delete <strong>{project.title}</strong>?
+            All your discovery answers and generated documents will be
+            permanently lost.
+          </p>
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsDeleteModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleDelete}>
+              Yes, Delete Project
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
