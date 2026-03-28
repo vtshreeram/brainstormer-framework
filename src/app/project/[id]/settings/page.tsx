@@ -16,6 +16,8 @@ export default function SettingsPage() {
     projects,
     setCurrentProject,
     deleteProject,
+    updateProject,
+    restoreVersion,
     addToast
   } = useStore();
   
@@ -23,9 +25,15 @@ export default function SettingsPage() {
   
   const [title, setTitle] = useState(project?.title || '');
   const [description, setDescription] = useState(project?.description || '');
+  const [titleError, setTitleError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [restoreTargetId, setRestoreTargetId] = useState<string | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
+
+  const isSaveDisabled =
+    !title.trim() ||
+    (title === project?.title && description === (project?.description || ''));
   
   useEffect(() => {
     if (projectId) {
@@ -44,6 +52,16 @@ export default function SettingsPage() {
     return <div>Loading...</div>;
   }
   
+  const handleSave = () => {
+    if (!title.trim()) {
+      setTitleError('Project title is required.');
+      return;
+    }
+    setTitleError('');
+    updateProject(projectId, { title: title.trim(), description: description.trim() });
+    addToast({ type: 'success', message: 'Project details saved.' });
+  };
+
   const handleGenerateShareLink = () => {
     const token = Math.random().toString(36).substring(2, 15);
     setShareLink(`${window.location.origin}/share/${token}`);
@@ -64,6 +82,14 @@ export default function SettingsPage() {
       addToast({ type: 'success', message: 'Project deleted' });
       router.push('/');
     }, 500);
+  };
+
+  const handleRestoreVersion = () => {
+    if (!restoreTargetId) return;
+    restoreVersion(projectId, restoreTargetId);
+    setRestoreTargetId(null);
+    addToast({ type: 'success', message: 'Version restored successfully.' });
+    router.push(`/project/${projectId}`);
   };
   
   return (
@@ -91,16 +117,19 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Project Title
+                Project Title <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                onChange={(e) => { setTitle(e.target.value); if (e.target.value.trim()) setTitleError(''); }}
+                className={`w-full px-4 py-2 border-0 border-b-2 bg-gray-50 focus:outline-none focus:bg-white ${titleError ? 'border-b-red-500' : 'border-b-gray-300 focus:border-b-primary-600'}`}
               />
+              {titleError && (
+                <p className="mt-1 text-sm text-red-500">{titleError}</p>
+              )}
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
@@ -109,9 +138,19 @@ export default function SettingsPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                className="w-full px-4 py-2 border-0 border-b-2 border-b-gray-300 bg-gray-50 focus:outline-none focus:border-b-primary-600 focus:bg-white resize-none"
                 placeholder="Add a description for your project"
               />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                variant="primary"
+                onClick={handleSave}
+                disabled={isSaveDisabled}
+              >
+                Save Changes
+              </Button>
             </div>
           </div>
         </div>
@@ -121,11 +160,11 @@ export default function SettingsPage() {
           
           <div className="space-y-3">
             {project.versions.map((version) => (
-              <div 
+              <div
                 key={version.id}
                 className={`
-                  p-4 rounded-lg border
-                  ${version.isCurrent ? 'border-primary-200 bg-primary-50' : 'border-gray-200'}
+                  p-4 border
+                  ${version.isCurrent ? 'border-l-4 border-l-primary-600 border-gray-200 bg-primary-10' : 'border-gray-200 hover:border-gray-300'}
                 `}
               >
                 <div className="flex items-center justify-between">
@@ -139,9 +178,20 @@ export default function SettingsPage() {
                     <span className="text-gray-500">·</span>
                     <span className="text-gray-500 text-sm">{version.name}</span>
                   </div>
-                  <span className="text-sm text-gray-400">
-                    {formatDate(version.createdAt)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-400">
+                      {formatDate(version.createdAt)}
+                    </span>
+                    {!version.isCurrent && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setRestoreTargetId(version.id)}
+                      >
+                        Restore
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -161,7 +211,7 @@ export default function SettingsPage() {
                   type="text"
                   value={shareLink}
                   readOnly
-                  className="flex-1 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm"
+                  className="flex-1 px-4 py-2 bg-gray-50 border-0 border-b-2 border-b-gray-300 text-sm"
                 />
                 <Button variant="secondary" onClick={handleCopyShareLink}>
                   Copy
@@ -208,6 +258,27 @@ export default function SettingsPage() {
             </Button>
             <Button variant="danger" onClick={handleDeleteProject} isLoading={isDeleting}>
               Delete Project
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={!!restoreTargetId}
+        onClose={() => setRestoreTargetId(null)}
+        title="Restore Version"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Restore this version? Your current wizard responses will be replaced with the responses from this version.
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setRestoreTargetId(null)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleRestoreVersion}>
+              Restore
             </Button>
           </div>
         </div>

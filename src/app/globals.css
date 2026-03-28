@@ -1,15 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 255, 255, 255;
+  --ibm-blue:     #0f62fe;
+  --ibm-gray-10:  #f4f4f4;
+  --ibm-gray-20:  #e0e0e0;
+  --ibm-gray-80:  #393939;
+  --ibm-gray-100: #161616;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  color: var(--ibm-gray-80);
+  background: var(--ibm-gray-10);
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
 }
 
 @layer utilities {
@@ -18,55 +24,53 @@ body {
     animation-timing-function: ease-out;
     animation-fill-mode: both;
   }
-  
+
   .fade-in {
     animation-name: fadeIn;
   }
-  
+
   .slide-in-from-right {
     animation-name: slideInFromRight;
   }
-  
+
   .zoom-in-95 {
     animation-name: zoomIn95;
   }
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes slideInFromRight {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
 }
 
 @keyframes zoomIn95 {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes sectionHighlight {
+  0%   { box-shadow: 0 0 0 2px #0f62fe; background-color: #edf5ff; }
+  80%  { box-shadow: 0 0 0 2px #0f62fe; background-color: #edf5ff; }
+  100% { box-shadow: none; background-color: transparent; }
+}
+
+.section-highlight {
+  animation: sectionHighlight 3s ease-out forwards;
 }
 
 @layer components {
+  /* IBM-inspired card: flat, border-defined, no radius */
   .card {
-    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+    @apply bg-white border border-gray-200 shadow-none;
+    border-radius: 0;
   }
-  
+
   .card-hover {
-    @apply transition-all duration-200 hover:shadow-md hover:border-gray-300;
+    @apply transition-colors duration-150 hover:border-primary-600;
   }
 }

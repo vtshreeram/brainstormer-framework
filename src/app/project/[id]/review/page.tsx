@@ -114,7 +114,7 @@ export default function ReviewPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className={`
-                      w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                      w-8 h-8 flex items-center justify-center text-sm font-medium
                       ${isComplete ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}
                     `}>
                       {isComplete ? (
@@ -140,11 +140,30 @@ export default function ReviewPage() {
                   </button>
                 </div>
                 
-                <div className="ml-11">
+                <div className="ml-11 space-y-3">
                   {response?.answer ? (
                     <p className="text-gray-600 whitespace-pre-wrap">{response.answer}</p>
                   ) : (
                     <p className="text-gray-400 italic">No answer provided</p>
+                  )}
+
+                  {/* Follow-up Q&A */}
+                  {response?.followUpQuestion && (
+                    <div className="pl-4 border-l-2 border-primary-200 mt-3">
+                      <p className="text-xs font-medium text-primary-600 uppercase tracking-wide mb-1">
+                        Follow-up
+                      </p>
+                      <p className="text-sm text-gray-500 italic mb-1">
+                        {response.followUpQuestion}
+                      </p>
+                      {response.followUpSkipped ? (
+                        <p className="text-sm text-gray-400 italic">Follow-up skipped</p>
+                      ) : response.followUpAnswer ? (
+                        <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                          {response.followUpAnswer}
+                        </p>
+                      ) : null}
+                    </div>
                   )}
                 </div>
               </div>

@@ -87,6 +87,9 @@ export interface DocumentOption {
 export interface AiProductSuggestion {
   title: string;
   description: string;
+  impact?: string;
+  effort?: string;
+  category?: string;
 }
 
 export interface AiSuggestionsResult {

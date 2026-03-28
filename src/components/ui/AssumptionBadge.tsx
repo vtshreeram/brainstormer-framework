@@ -64,7 +64,7 @@ export function AssumptionBadge({
   
   return (
     <div className={`
-      p-4 rounded-lg border
+      p-4 border
       ${assumption.confirmed ? 'bg-green-50 border-green-200' : typeColors[assumption.type]}
     `}>
       <div className="flex items-start gap-3">

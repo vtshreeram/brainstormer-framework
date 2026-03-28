@@ -34,6 +34,8 @@ interface AppState {
   createProject: (title: string, description?: string) => Project;
   deleteProject: (projectId: string) => void;
   updateProjectStatus: (projectId: string, status: Project["status"]) => void;
+  updateProject: (projectId: string, fields: { title?: string; description?: string }) => void;
+  restoreVersion: (projectId: string, versionId: string) => void;
 
   setResponse: (stepId: string, response: Response) => void;
   updateResponse: (stepId: string, answer: string) => void;
@@ -54,6 +56,7 @@ interface AppState {
     docId: string,
     content: string,
   ) => void;
+  incrementExportCount: (projectId: string, docId: string) => void;
 
   aiSuggestions: Record<string, AiSuggestionsResult>;
   isLoadingSuggestions: boolean;
@@ -61,6 +64,7 @@ interface AppState {
     docId: string,
     prdContent: string,
     userMetrics?: string,
+    docType?: string,
   ) => Promise<void>;
   acceptSuggestedMetrics: (
     projectId: string,
@@ -174,6 +178,40 @@ export const useStore = create<AppState>()(
               ? { ...p, status, updatedAt: new Date().toISOString() }
               : p,
           ),
+        }));
+      },
+
+      updateProject: (projectId, fields) => {
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === projectId
+              ? { ...p, ...fields, updatedAt: new Date().toISOString() }
+              : p,
+          ),
+        }));
+      },
+
+      restoreVersion: (projectId, versionId) => {
+        const project = get().projects.find((p) => p.id === projectId);
+        if (!project) return;
+        const targetVersion = project.versions.find((v) => v.id === versionId);
+        if (!targetVersion) return;
+
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === projectId
+              ? {
+                  ...p,
+                  updatedAt: new Date().toISOString(),
+                  versions: p.versions.map((v) => ({
+                    ...v,
+                    isCurrent: v.id === versionId,
+                  })),
+                }
+              : p,
+          ),
+          currentVersionId: versionId,
+          responses: targetVersion.responses,
         }));
       },
 
@@ -476,7 +514,24 @@ export const useStore = create<AppState>()(
         }));
       },
 
-      fetchAiSuggestions: async (docId, prdContent, userMetrics) => {
+      incrementExportCount: (projectId, docId) => {
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === projectId
+              ? {
+                  ...p,
+                  generatedDocuments: p.generatedDocuments.map((d) =>
+                    d.id === docId
+                      ? { ...d, exportCount: (d.exportCount || 0) + 1 }
+                      : d,
+                  ),
+                }
+              : p,
+          ),
+        }));
+      },
+
+      fetchAiSuggestions: async (docId, prdContent, userMetrics, docType) => {
         set({ isLoadingSuggestions: true });
         try {
           const response = await fetch("/api/ai-suggestions", {
@@ -485,6 +540,7 @@ export const useStore = create<AppState>()(
             body: JSON.stringify({
               prd_content: prdContent,
               user_metrics: userMetrics,
+              doc_type: docType,
             }),
           });
 

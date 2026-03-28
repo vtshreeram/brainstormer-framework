@@ -90,7 +90,7 @@ export default function GeneratePage() {
                   key={type}
                   onClick={() => toggleDocumentSelection(type)}
                   className={`
-                    w-full p-4 rounded-lg border-2 text-left transition-all
+                    w-full p-4 border-2 text-left transition-all
                     ${isSelected 
                       ? 'border-primary-500 bg-primary-50' 
                       : 'border-gray-200 hover:border-gray-300'

@@ -24,6 +24,8 @@ export interface PRDSectionViewProps {
   activeSectionId?: string | null;
   /** Called when this section opens/closes an inline action */
   onActionStart?: (sectionId: string | null) => void;
+  /** When true, hides the Regenerate button (for non-PRD doc types) */
+  disableRegenerate?: boolean;
 }
 
 // ─── Small icon components ─────────────────────────────────────────────────
@@ -173,6 +175,7 @@ interface ActionBarProps {
   onImprove: () => void;
   onRegenerate: () => void;
   isAskActive: boolean;
+  disableRegenerate?: boolean;
 }
 
 function ActionBar({
@@ -180,6 +183,7 @@ function ActionBar({
   onImprove,
   onRegenerate,
   isAskActive,
+  disableRegenerate = false,
 }: ActionBarProps) {
   return (
     <div
@@ -225,27 +229,30 @@ function ActionBar({
         </button>
       </Tooltip>
 
-      <div className="w-px h-4 bg-gray-200" />
-
-      {/* Regenerate */}
-      <Tooltip label="Regenerate this section">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onRegenerate();
-          }}
-          className="
-            flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
-            text-gray-500 hover:bg-violet-50 hover:text-violet-600
-            transition-all duration-150
-          "
-        >
-          <RegenerateIcon />
-          <span>Regenerate</span>
-        </button>
-      </Tooltip>
+      {/* Regenerate — hidden for non-PRD doc types */}
+      {!disableRegenerate && (
+        <>
+          <div className="w-px h-4 bg-gray-200" />
+          <Tooltip label="Regenerate this section">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRegenerate();
+              }}
+              className="
+                flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
+                text-gray-500 hover:bg-violet-50 hover:text-violet-600
+                transition-all duration-150
+              "
+            >
+              <RegenerateIcon />
+              <span>Regenerate</span>
+            </button>
+          </Tooltip>
+        </>
+      )}
     </div>
   );
 }
@@ -709,6 +716,7 @@ export function PRDSectionView({
   isAskActive = false,
   activeSectionId,
   onActionStart,
+  disableRegenerate = false,
 }: PRDSectionViewProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [action, setAction] = useState<InlineAction>(null);
@@ -927,6 +935,7 @@ export function PRDSectionView({
             onImprove={handleImproveOptions}
             onRegenerate={handleRegenerate}
             isAskActive={isAskActive}
+            disableRegenerate={disableRegenerate}
           />
         </div>
       </div>

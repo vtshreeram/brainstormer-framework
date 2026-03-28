@@ -311,10 +311,180 @@ const fallbackResult: AiSuggestionsResult = {
  * matches in the lowercased PRD content. Returns the fallback if no bucket
  * scores above zero.
  */
+// ─── Doc-type specific suggestion sets ───────────────────────────────────────
+
+const architectureSuggestions: AiSuggestionsResult = {
+  metrics: [
+    "API p95 response time < 200ms under expected peak load",
+    "Service uptime target ≥ 99.9% (measured monthly)",
+    "Database query time < 50ms for primary read paths",
+    "Cold start time < 1s for serverless functions",
+    "Error rate < 0.1% across all API endpoints",
+  ],
+  suggestions: [
+    {
+      title: "Add a caching layer",
+      description: "Introduce Redis or an in-memory cache for frequently read data to reduce database load and improve response times.",
+      impact: "high",
+      effort: "medium",
+      category: "Performance",
+    },
+    {
+      title: "Define a clear API versioning strategy",
+      description: "Use URL-based versioning (/api/v1/) from day one to avoid breaking changes as the API evolves.",
+      impact: "high",
+      effort: "low",
+      category: "Architecture",
+    },
+    {
+      title: "Add structured logging and tracing",
+      description: "Implement correlation IDs and structured JSON logs from the start. Retrofitting observability is expensive.",
+      impact: "medium",
+      effort: "low",
+      category: "Observability",
+    },
+    {
+      title: "Plan for horizontal scaling",
+      description: "Ensure stateless service design so instances can be scaled horizontally without session affinity issues.",
+      impact: "high",
+      effort: "medium",
+      category: "Scalability",
+    },
+  ],
+};
+
+const userStoriesSuggestions: AiSuggestionsResult = {
+  metrics: [
+    "Story coverage: all core features have at least one user story",
+    "Acceptance criteria completeness: each story has ≥ 2 testable AC items",
+    "Edge case coverage: error states and empty states are documented",
+    "Priority distribution: ≥ 60% of stories are P0 or P1",
+    "Story size: no story exceeds 5 story points without being split",
+  ],
+  suggestions: [
+    {
+      title: "Add empty state stories",
+      description: "Every list or data view needs a story for the empty state — what does the user see when there is no data yet?",
+      impact: "medium",
+      effort: "low",
+      category: "UX",
+    },
+    {
+      title: "Add error state stories",
+      description: "Document what happens when API calls fail, network is unavailable, or validation fails. These are often missed until QA.",
+      impact: "high",
+      effort: "low",
+      category: "Resilience",
+    },
+    {
+      title: "Add permission/role-based stories",
+      description: "If the product has multiple user roles, add stories that explicitly test what each role can and cannot do.",
+      impact: "high",
+      effort: "medium",
+      category: "Access Control",
+    },
+    {
+      title: "Split large stories",
+      description: "Any story that touches more than one screen or requires more than one API call should be split into smaller, independently deliverable stories.",
+      impact: "medium",
+      effort: "low",
+      category: "Agile",
+    },
+  ],
+};
+
+const apiSpecSuggestions: AiSuggestionsResult = {
+  metrics: [
+    "API documentation coverage: 100% of endpoints documented",
+    "Error code coverage: all error states have defined response schemas",
+    "Authentication coverage: all protected endpoints specify auth requirements",
+    "Rate limit documentation: limits defined for all public endpoints",
+    "Schema validation: all request/response bodies have JSON schemas",
+  ],
+  suggestions: [
+    {
+      title: "Add a health check endpoint",
+      description: "Implement GET /health returning service status, version, and dependency health. Required for load balancers and monitoring.",
+      impact: "high",
+      effort: "low",
+      category: "Operations",
+    },
+    {
+      title: "Define a standard error envelope",
+      description: "All error responses should use a consistent shape: { error: { code, message, details? } }. Document it once and reference it everywhere.",
+      impact: "high",
+      effort: "low",
+      category: "Consistency",
+    },
+    {
+      title: "Add pagination to all list endpoints",
+      description: "Any endpoint returning a collection should support cursor or offset pagination from day one. Retrofitting pagination breaks clients.",
+      impact: "high",
+      effort: "medium",
+      category: "Scalability",
+    },
+    {
+      title: "Document rate limits explicitly",
+      description: "Specify rate limits per endpoint and return Retry-After headers when limits are hit. Clients need this to implement backoff.",
+      impact: "medium",
+      effort: "low",
+      category: "API Design",
+    },
+  ],
+};
+
+const roadmapSuggestions: AiSuggestionsResult = {
+  metrics: [
+    "Phase 1 completion: all MVP features shipped within planned timeline",
+    "Scope creep rate: < 20% of stories added after phase kickoff",
+    "Milestone hit rate: ≥ 80% of milestones delivered on time",
+    "Technical debt ratio: < 15% of sprint capacity spent on debt each phase",
+    "User feedback loop: at least one user interview per phase",
+  ],
+  suggestions: [
+    {
+      title: "Add a feedback collection milestone",
+      description: "Schedule a dedicated user feedback sprint after Phase 1 ships. Insights from real users should shape Phase 2 scope.",
+      impact: "high",
+      effort: "low",
+      category: "Product",
+    },
+    {
+      title: "Define phase exit criteria",
+      description: "Each phase should have explicit, measurable exit criteria (not just 'features done'). Include performance, quality, and user metrics.",
+      impact: "high",
+      effort: "low",
+      category: "Planning",
+    },
+    {
+      title: "Reserve 20% capacity for technical debt",
+      description: "Explicitly allocate time for refactoring and debt reduction in each phase. Unplanned debt accumulates and slows future phases.",
+      impact: "medium",
+      effort: "low",
+      category: "Engineering",
+    },
+    {
+      title: "Add a rollback plan per phase",
+      description: "Document what happens if a phase milestone is missed by more than 2 weeks. Having a pre-agreed plan avoids reactive decisions.",
+      impact: "medium",
+      effort: "low",
+      category: "Risk",
+    },
+  ],
+};
+
 function pickSuggestions(
   prdContent: string,
   userMetrics?: string,
+  docType?: string,
 ): AiSuggestionsResult {
+  // Return doc-type-specific suggestions for non-PRD documents
+  if (docType === "architecture") return architectureSuggestions;
+  if (docType === "user_stories") return userStoriesSuggestions;
+  if (docType === "api_spec") return apiSpecSuggestions;
+  if (docType === "roadmap") return roadmapSuggestions;
+
+  // PRD: keyword-based selection (existing behaviour)
   const haystack = (prdContent + " " + (userMetrics ?? "")).toLowerCase();
 
   let bestBucket: SuggestionBucket | null = null;
@@ -333,9 +503,6 @@ function pickSuggestions(
 
   const base = bestBucket ? bestBucket.result : fallbackResult;
 
-  // If the user already provided their own metrics, refine rather than replace.
-  // We keep the AI-generated metrics but prepend a note that the user's metrics
-  // were detected and incorporated as the first entry.
   if (userMetrics && userMetrics.trim().length > 20) {
     const refinedMetrics = [
       `Refined from your input: ${userMetrics.trim().slice(0, 120)}${userMetrics.trim().length > 120 ? "…" : ""}`,
@@ -354,12 +521,15 @@ function pickSuggestions(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { prd_content, user_metrics } = body as {
+    const { prd_content, user_metrics, doc_type } = body as {
       prd_content?: string;
       user_metrics?: string;
+      doc_type?: string;
     };
 
-    if (!prd_content || prd_content.trim().length < 10) {
+    // For non-PRD doc types, content is optional (we use doc_type to pick suggestions)
+    const isNonPrd = doc_type && doc_type !== "prd";
+    if (!isNonPrd && (!prd_content || prd_content.trim().length < 10)) {
       return NextResponse.json(
         {
           error:
@@ -372,7 +542,7 @@ export async function POST(request: NextRequest) {
     // Simulate realistic AI processing latency (600 ms – 1.4 s)
     await simulateDelay(600, 1400);
 
-    const result = pickSuggestions(prd_content, user_metrics);
+    const result = pickSuggestions(prd_content ?? "", user_metrics, doc_type);
 
     return NextResponse.json(result);
   } catch (error: unknown) {

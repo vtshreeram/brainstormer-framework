@@ -103,7 +103,7 @@ function MessageBubble({ message }: { message: Message }) {
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] bg-primary-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm leading-relaxed">
+        <div className="max-w-[85%] bg-primary-600 text-white px-4 py-2.5 text-sm leading-relaxed">
           {message.text}
         </div>
       </div>
@@ -114,10 +114,10 @@ function MessageBubble({ message }: { message: Message }) {
   if (message.isLoading) {
     return (
       <div className="flex items-start gap-2.5">
-        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center mt-0.5">
+        <div className="flex-shrink-0 w-7 h-7 bg-primary-10 flex items-center justify-center mt-0.5">
           <SparklesIcon className="w-3.5 h-3.5 text-violet-600" />
         </div>
-        <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]">
+        <div className="bg-gray-100 px-4 py-3 max-w-[85%]">
           <div className="flex items-center gap-1.5">
             <span
               className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
@@ -139,11 +139,11 @@ function MessageBubble({ message }: { message: Message }) {
 
   return (
     <div className="flex items-start gap-2.5 group/msg">
-      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center mt-0.5">
+      <div className="flex-shrink-0 w-7 h-7 bg-primary-10 flex items-center justify-center mt-0.5">
         <SparklesIcon className="w-3.5 h-3.5 text-violet-600" />
       </div>
       <div className="max-w-[85%]">
-        <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3">
+        <div className="bg-gray-100 px-4 py-3">
           <div className="prose prose-sm max-w-none text-gray-800 [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_h1]:text-sm [&_h2]:text-sm [&_h3]:text-xs [&_code]:text-xs [&_table]:text-xs">
             <ReactMarkdown disableFormatting>{message.text}</ReactMarkdown>
           </div>
@@ -323,7 +323,7 @@ export function SectionAskPanel({
         className="
           fixed inset-y-0 right-0 z-50
           w-full max-w-[420px] sm:w-[38%]
-          bg-white border-l border-gray-200 shadow-2xl
+          bg-white border-l border-gray-200
           flex flex-col
           transition-transform duration-250 ease-out
         "
@@ -338,7 +338,7 @@ export function SectionAskPanel({
         <div className="flex-shrink-0 px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-blue-50">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center mt-0.5">
+              <div className="flex-shrink-0 w-8 h-8 bg-primary-10 flex items-center justify-center mt-0.5">
                 <SparklesIcon className="w-4 h-4 text-violet-600" />
               </div>
               <div className="min-w-0">
@@ -371,7 +371,7 @@ export function SectionAskPanel({
           {isEmpty ? (
             /* Empty state */
             <div className="h-full flex flex-col items-center justify-center text-center gap-4 px-2">
-              <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center">
+              <div className="w-12 h-12 bg-primary-10 flex items-center justify-center">
                 <SparklesIcon className="w-6 h-6 text-violet-400" />
               </div>
               <div>
@@ -395,7 +395,7 @@ export function SectionAskPanel({
                       key={chip}
                       onClick={() => handleChipClick(chip)}
                       className="
-                        w-full text-left text-xs px-3 py-2 rounded-lg
+                        w-full text-left text-xs px-3 py-2
                         bg-gray-50 border border-gray-200
                         text-gray-700 hover:bg-violet-50 hover:border-violet-200
                         hover:text-violet-700 transition-colors
@@ -426,7 +426,7 @@ export function SectionAskPanel({
                 key={chip}
                 onClick={() => handleChipClick(chip)}
                 className="
-                  text-[11px] px-2.5 py-1 rounded-full
+                  text-[11px] px-2 py-0.5
                   bg-gray-100 border border-gray-200
                   text-gray-600 hover:bg-violet-50 hover:border-violet-200
                   hover:text-violet-700 transition-colors
@@ -443,7 +443,7 @@ export function SectionAskPanel({
           <form onSubmit={handleSubmit}>
             <div
               className="
-                flex items-end gap-2 rounded-xl border border-gray-200
+                flex items-end gap-2 border border-gray-200
                 bg-gray-50 focus-within:border-violet-400 focus-within:bg-white
                 focus-within:ring-1 focus-within:ring-violet-300
                 transition-all px-3 py-2
@@ -474,7 +474,7 @@ export function SectionAskPanel({
                 type="submit"
                 disabled={!inputValue.trim() || isLoading}
                 className="
-                  flex-shrink-0 w-7 h-7 rounded-lg
+                  flex-shrink-0 w-7 h-7
                   flex items-center justify-center
                   bg-violet-600 text-white
                   hover:bg-violet-700

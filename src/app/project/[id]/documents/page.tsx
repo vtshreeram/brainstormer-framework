@@ -36,7 +36,7 @@ interface ParsedDocument {
   sections: ParsedSection[];
 }
 
-function parsePRDSections(content: string): ParsedDocument {
+function parseDocumentSections(content: string): ParsedDocument {
   // Split at each ## heading (lookahead keeps the delimiter in each chunk)
   const parts = content.split(/(?=^##\s)/m);
 
@@ -81,6 +81,7 @@ export default function DocumentsPage() {
     fetchAiSuggestions,
     acceptSuggestedMetrics,
     updateGeneratedDocument,
+    incrementExportCount,
     clearAiSuggestions,
     addToast,
     generateSingleDocument,
@@ -202,25 +203,43 @@ export default function DocumentsPage() {
     (d) => d.id === selectedDocId,
   );
 
-  // Auto-trigger AI suggestions whenever a PRD is opened for the first time
+  // ── Labels / icons ──────────────────────────────────────────────────────────
+
+  const typeLabels: Record<string, string> = {
+    prd: "Product Requirements Document",
+    architecture: "Technical Architecture",
+    user_stories: "User Stories",
+    api_spec: "API Specifications",
+    roadmap: "Implementation Roadmap",
+  };
+
+  const typeIcons: Record<string, string> = {
+    prd: "📋",
+    architecture: "🏗️",
+    user_stories: "📝",
+    api_spec: "🔗",
+    roadmap: "🗺️",
+  };
+
+  // Auto-trigger AI suggestions whenever a document is opened for the first time
   useEffect(() => {
     if (!selectedDoc) return;
     if (autoTriggeredRef.current.has(selectedDoc.id)) return;
 
     autoTriggeredRef.current.add(selectedDoc.id);
-    setShowSuggestions(false); // Do not auto-open the modal, just fetch in background
+    setShowSuggestions(false); // Do not auto-open the panel, just fetch in background
 
     const currentVersion = project?.versions.find((v) => v.isCurrent);
     const userMetrics = currentVersion?.responses?.["step_7"]?.answer;
 
-    fetchAiSuggestions(selectedDoc.id, selectedDoc.content, userMetrics);
+    fetchAiSuggestions(selectedDoc.id, selectedDoc.content, userMetrics, selectedDoc.type);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDoc?.id]);
 
   // ── Parse sections (only for PRD) ───────────────────────────────────────────
   const parsedSections = useMemo<ParsedDocument | null>(() => {
     if (!selectedDoc) return null;
-    return parsePRDSections(selectedDoc.content);
+    return parseDocumentSections(selectedDoc.content);
   }, [selectedDoc?.id, selectedDoc?.content]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
@@ -229,9 +248,10 @@ export default function DocumentsPage() {
     navigator.clipboard.writeText(formatMarkdownString(content));
     setCopiedId(docId);
     setTimeout(() => setCopiedId(null), 2000);
+    incrementExportCount(projectId, docId);
   };
 
-  const handleDownload = (filename: string, content: string) => {
+  const handleDownload = (filename: string, content: string, docId: string) => {
     const formattedContent = formatMarkdownString(content);
     const blob = new Blob([formattedContent], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
@@ -240,6 +260,7 @@ export default function DocumentsPage() {
     a.download = `${filename}.md`;
     a.click();
     URL.revokeObjectURL(url);
+    incrementExportCount(projectId, docId);
   };
 
   const handleGetSuggestions = useCallback(() => {
@@ -249,7 +270,7 @@ export default function DocumentsPage() {
     const currentVersion = project?.versions.find((v) => v.isCurrent);
     const userMetrics = currentVersion?.responses?.["step_7"]?.answer;
 
-    fetchAiSuggestions(selectedDoc.id, selectedDoc.content, userMetrics);
+    fetchAiSuggestions(selectedDoc.id, selectedDoc.content, userMetrics, selectedDoc.type);
   }, [selectedDoc, project, fetchAiSuggestions]);
 
   const handleDismissSuggestions = () => {
@@ -260,8 +281,20 @@ export default function DocumentsPage() {
     if (!selectedDoc) return;
     const currentVersion = project?.versions.find((v) => v.isCurrent);
     const userMetrics = currentVersion?.responses?.["step_7"]?.answer;
-    fetchAiSuggestions(selectedDoc.id, selectedDoc.content, userMetrics);
+    fetchAiSuggestions(selectedDoc.id, selectedDoc.content, userMetrics, selectedDoc.type);
   }, [selectedDoc, project, fetchAiSuggestions]);
+
+  const handleAddSuggestionToDoc = useCallback(
+    (suggestion: { title: string; description: string }) => {
+      if (!selectedDoc || !project) return;
+
+      const insertion = `\n- **${suggestion.title}**: ${suggestion.description}\n`;
+      const updatedContent = selectedDoc.content + insertion;
+      updateGeneratedDocument(projectId, selectedDoc.id, updatedContent);
+      addToast({ type: "success", message: `Suggestion added to ${typeLabels[selectedDoc.type] ?? "document"}.` });
+    },
+    [selectedDoc, project, projectId, updateGeneratedDocument, addToast],
+  );
 
   /**
    * Accept metrics — appends the suggested metrics as a new sub-section
@@ -352,23 +385,7 @@ export default function DocumentsPage() {
     setActiveSectionId(sectionId);
   }, []);
 
-  // ── Labels / icons ────────────────────────────────────────────────────────────
 
-  const typeLabels: Record<string, string> = {
-    prd: "Product Requirements Document",
-    architecture: "Technical Architecture",
-    user_stories: "User Stories",
-    api_spec: "API Specifications",
-    roadmap: "Implementation Roadmap",
-  };
-
-  const typeIcons: Record<string, string> = {
-    prd: "📋",
-    architecture: "🏗️",
-    user_stories: "📝",
-    api_spec: "🔗",
-    roadmap: "🗺️",
-  };
 
   const hasAvailableDocs = availableDocTypes.length > 0;
 
@@ -447,11 +464,11 @@ export default function DocumentsPage() {
                       }
                     }}
                     className={`
-                      w-full p-3 rounded-lg text-left transition-colors
+                      w-full p-3 text-left transition-colors border-l-2
                       ${
                         selectedDocId === doc.id
-                          ? "bg-primary-100 text-primary-700"
-                          : "hover:bg-gray-100"
+                          ? "bg-white border-l-primary-600 text-primary-700"
+                          : "border-l-transparent hover:bg-gray-100 hover:border-l-gray-300"
                       }
                     `}
                   >
@@ -519,7 +536,7 @@ export default function DocumentsPage() {
                       return (
                         <div
                           key={type}
-                          className="w-full p-3 rounded-lg border border-dashed border-gray-200 bg-gray-50/50"
+                          className="w-full p-3 border border-dashed border-gray-300 bg-gray-50"
                         >
                           <div className="flex items-center gap-2">
                             <span className="opacity-60">{icon}</span>
@@ -615,8 +632,8 @@ export default function DocumentsPage() {
 
             {/* ── AI tip card ── */}
 
-            <div className="mt-4 p-3 rounded-lg bg-violet-50 border border-violet-200">
-              <p className="text-xs text-violet-700 font-medium mb-1 flex items-center gap-1">
+            <div className="mt-4 p-3 bg-primary-10 border-l-4 border-l-primary-600">
+              <p className="text-xs text-primary-700 font-medium mb-1 flex items-center gap-1">
                 <svg
                   className="w-3.5 h-3.5"
                   fill="none"
@@ -632,7 +649,7 @@ export default function DocumentsPage() {
                 </svg>
                 AI suggestions available
               </p>
-              <p className="text-xs text-violet-600 leading-relaxed">
+              <p className="text-xs text-primary-600 leading-relaxed">
                 Get AI-powered insights tailored to this document.
               </p>
               <button
@@ -643,7 +660,7 @@ export default function DocumentsPage() {
                     setShowSuggestions(true);
                   }
                 }}
-                className="mt-2 text-xs font-medium text-violet-700 underline underline-offset-2 hover:text-violet-900 transition-colors"
+                className="mt-2 text-xs font-medium text-primary-700 underline underline-offset-2 hover:text-primary-900 transition-colors"
               >
                 View suggestions →
               </button>
@@ -651,8 +668,8 @@ export default function DocumentsPage() {
 
             {/* ── Section AI hint ── */}
             {parsedSections && parsedSections.sections.length > 0 && (
-              <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
-                <p className="text-xs text-blue-700 font-medium mb-1 flex items-center gap-1">
+              <div className="mt-4 p-3 bg-gray-100 border-l-4 border-l-gray-500">
+                <p className="text-xs text-gray-700 font-medium mb-1 flex items-center gap-1">
                   <svg
                     className="w-3.5 h-3.5"
                     fill="none"
@@ -668,7 +685,7 @@ export default function DocumentsPage() {
                   </svg>
                   Section AI actions
                 </p>
-                <p className="text-xs text-blue-600 leading-relaxed">
+                <p className="text-xs text-gray-600 leading-relaxed">
                   Hover over any section to <strong>Ask AI</strong>,{" "}
                   <strong>Improve</strong>, or <strong>Regenerate</strong> it
                   individually.
@@ -806,6 +823,7 @@ export default function DocumentsPage() {
                               .toLowerCase()
                               .replace(/\s+/g, "-"),
                             selectedDoc.content,
+                            selectedDoc.id,
                           )
                         }
                       >
@@ -855,6 +873,7 @@ export default function DocumentsPage() {
                               isAskActive={askPanel?.sectionId === section.id}
                               activeSectionId={activeSectionId}
                               onActionStart={handleSectionActionStart}
+                              disableRegenerate={selectedDoc?.type !== 'prd'}
                             />
                           ))}
                         </div>
@@ -882,13 +901,15 @@ export default function DocumentsPage() {
                     isLoading={isLoadingSuggestions}
                     onDismiss={handleDismissSuggestions}
                     onRefetch={handleRefetch}
+                    onAddToDocument={handleAddSuggestionToDoc}
+                    docTypeLabel={selectedDoc ? (typeLabels[selectedDoc.type] ?? "Document") : "Document"}
                   />
                 )}
               </>
             ) : (
               /* ── Empty state ── */
               <div className="card p-12 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gray-100 flex items-center justify-center mx-auto mb-4">
                   <svg
                     className="w-8 h-8 text-gray-400"
                     fill="none"

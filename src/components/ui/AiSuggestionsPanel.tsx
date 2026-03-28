@@ -17,6 +17,10 @@ interface AiSuggestionsPanelProps {
   onDismiss: () => void;
   /** Called when the user clicks the Refresh button to re-fetch */
   onRefetch: () => void;
+  /** Called when user clicks "Add to Document" on a suggestion */
+  onAddToDocument?: (suggestion: AiProductSuggestion) => void;
+  /** Label for the document type shown in the add button (e.g. "PRD", "Architecture") */
+  docTypeLabel?: string;
   className?: string;
 }
 
@@ -154,10 +158,13 @@ function LoadingSkeleton() {
 interface SuggestionCardProps {
   suggestion: AiProductSuggestion;
   index: number;
+  onAddToDocument?: (suggestion: AiProductSuggestion) => void;
+  docTypeLabel?: string;
 }
 
-function SuggestionCard({ suggestion, index }: SuggestionCardProps) {
+function SuggestionCard({ suggestion, index, onAddToDocument, docTypeLabel }: SuggestionCardProps) {
   const [copied, setCopied] = useState(false);
+  const [added, setAdded] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   const handleCopy = () => {
@@ -165,6 +172,13 @@ function SuggestionCard({ suggestion, index }: SuggestionCardProps) {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleAdd = () => {
+    if (!onAddToDocument) return;
+    onAddToDocument(suggestion);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
   };
 
   // Rotating accent colours for left border
@@ -193,7 +207,6 @@ function SuggestionCard({ suggestion, index }: SuggestionCardProps) {
       className={`
         group relative pl-4 pr-3 py-3
         border-l-[3px] ${accentBorder}
-        rounded-r-md
         transition-colors duration-150
         hover:bg-gray-50/80
       `}
@@ -248,12 +261,29 @@ function SuggestionCard({ suggestion, index }: SuggestionCardProps) {
         {suggestion.description}
       </p>
 
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        className="mt-1 text-xs font-medium text-violet-600 hover:text-violet-800 transition-colors"
-      >
-        {expanded ? '↑ Collapse' : '↓ Expand'}
-      </button>
+      <div className="flex items-center justify-between mt-1.5">
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="text-xs font-medium text-violet-600 hover:text-violet-800 transition-colors"
+        >
+          {expanded ? '↑ Collapse' : '↓ Expand'}
+        </button>
+
+        {onAddToDocument && (
+          <button
+            onClick={handleAdd}
+            className={`
+              text-xs font-medium px-2 py-0.5 rounded transition-colors duration-150
+              ${added
+                ? 'text-green-700 bg-green-50'
+                : 'text-violet-700 bg-violet-50 hover:bg-violet-100'
+              }
+            `}
+          >
+            {added ? '✓ Added' : `+ Add to ${docTypeLabel ?? 'Document'}`}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -267,6 +297,8 @@ export function AiSuggestionsPanel({
   isLoading,
   onDismiss,
   onRefetch,
+  onAddToDocument,
+  docTypeLabel,
   className = '',
 }: AiSuggestionsPanelProps) {
 
@@ -288,10 +320,10 @@ export function AiSuggestionsPanel({
         <div className="absolute inset-0" onClick={onDismiss} aria-hidden="true" />
 
         {/* Drawer panel */}
-        <div className="relative w-full max-w-[400px] bg-white shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300 border-l border-gray-200">
+        <div className="relative w-full max-w-[400px] bg-white flex flex-col h-full animate-in slide-in-from-right duration-300 border-l border-gray-200">
 
           {/* ── Panel header ── */}
-          <div className="flex flex-col px-5 py-5 border-b border-gray-100 bg-white flex-shrink-0 z-10 shadow-sm">
+          <div className="flex flex-col px-5 py-5 border-b border-gray-200 bg-gray-50 flex-shrink-0 z-10">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
@@ -307,7 +339,7 @@ export function AiSuggestionsPanel({
                 onClick={onDismiss}
                 title="Close suggestions"
                 className="
-                  p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100
+                  p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100
                   transition-colors duration-150
                 "
               >
@@ -319,7 +351,7 @@ export function AiSuggestionsPanel({
               onClick={onRefetch}
               disabled={isLoading}
               className="
-                flex items-center justify-center gap-1.5 w-full py-2 rounded-md
+                flex items-center justify-center gap-1.5 w-full py-2
                 text-sm font-medium text-violet-700 bg-violet-50
                 border border-violet-200
                 hover:bg-violet-100 hover:border-violet-300
@@ -360,7 +392,13 @@ export function AiSuggestionsPanel({
                 {/* Suggestion list */}
                 <div className="space-y-4">
                   {suggestions.suggestions.map((s, i) => (
-                    <SuggestionCard key={i} suggestion={s} index={i} />
+                    <SuggestionCard
+                      key={i}
+                      suggestion={s}
+                      index={i}
+                      onAddToDocument={onAddToDocument}
+                      docTypeLabel={docTypeLabel}
+                    />
                   ))}
                 </div>
               </div>
@@ -369,7 +407,7 @@ export function AiSuggestionsPanel({
           ) : (
             /* ── Empty / error state ── */
             <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center mb-3">
+              <div className="w-12 h-12 bg-primary-10 flex items-center justify-center mb-3">
                 <SparklesIcon className="w-6 h-6 text-violet-400" />
               </div>
               <p className="text-sm font-medium text-gray-700 mb-1">No suggestions yet</p>
@@ -390,7 +428,7 @@ export function AiSuggestionsPanel({
 
           {/* ── Panel footer ── */}
           {!isLoading && suggestions && (
-            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex-shrink-0">
+            <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex-shrink-0">
               <p className="text-xs text-gray-400 flex items-center gap-1.5">
                 <SparklesIcon className="w-3 h-3 flex-shrink-0 text-violet-400" />
                 AI suggestions are based on your PRD content and common product patterns. Always validate with user research.

@@ -68,7 +68,7 @@ export function FollowUpQuestion({
   if (isLoading) {
     return (
       <div className={`mt-4 ${className}`}>
-        <div className="flex items-center gap-2.5 px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg">
+        <div className="flex items-center gap-2.5 px-4 py-3 bg-gray-50 border border-gray-200">
           <svg
             className="animate-spin w-4 h-4 text-indigo-400 flex-shrink-0"
             xmlns="http://www.w3.org/2000/svg"
@@ -95,7 +95,7 @@ export function FollowUpQuestion({
   if (isSkipped) {
     return (
       <div className={`mt-4 ${className}`}>
-        <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-dashed border-gray-300 rounded-lg">
+        <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-dashed border-gray-300">
           <svg
             className="w-4 h-4 text-gray-400 flex-shrink-0"
             fill="none"
@@ -119,10 +119,10 @@ export function FollowUpQuestion({
   if (savedAnswer && mode !== 'editing') {
     return (
       <div className={`mt-4 ${className}`}>
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+        <div className="p-4 bg-emerald-50 border border-emerald-200">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2.5 min-w-0">
-              <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-5 h-5 bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
@@ -150,10 +150,10 @@ export function FollowUpQuestion({
   if (isAiAnswering) {
     return (
       <div className={`mt-4 ${className}`}>
-        <div className="p-4 bg-violet-50 border border-violet-200 rounded-lg">
+        <div className="p-4 bg-primary-10 border border-primary-20">
           {/* Question context */}
           <div className="flex items-start gap-2.5 mb-3">
-            <div className="w-5 h-5 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-5 h-5 bg-primary-10 flex items-center justify-center flex-shrink-0 mt-0.5">
               <svg className="w-3 h-3 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -191,10 +191,10 @@ export function FollowUpQuestion({
   if (mode === 'answering' || mode === 'editing') {
     return (
       <div className={`mt-4 ${className}`}>
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+        <div className="p-4 bg-blue-50 border border-blue-200 space-y-3">
           {/* Question header */}
           <div className="flex items-start gap-2.5">
-            <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-5 h-5 bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
               <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -241,10 +241,10 @@ export function FollowUpQuestion({
   // ─── 6. Idle — question shown with the three primary action buttons ───────
   return (
     <div className={`mt-4 ${className}`}>
-      <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+      <div className="p-4 bg-amber-50 border border-amber-200">
         {/* Label + Question */}
         <div className="flex items-start gap-2.5">
-          <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <div className="w-6 h-6 bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
             <svg className="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"

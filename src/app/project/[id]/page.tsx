@@ -75,7 +75,7 @@ export default function ProjectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb Navigation */}
       <div className="bg-white border-b sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-6 py-2 flex items-center gap-2 text-xs font-medium text-gray-500">
@@ -100,7 +100,7 @@ export default function ProjectPage() {
       </div>
 
       {/* 1. Header (Project Name + Open PRD) */}
-      <header className="bg-white border-b shadow-sm relative z-10">
+      <header className="bg-white border-b border-b border-gray-200 relative z-10">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex-1">
@@ -163,7 +163,7 @@ export default function ProjectPage() {
                   onClick={() =>
                     router.push(`/project/${projectId}/documents?type=prd`)
                   }
-                  className="shadow-sm"
+                  className=""
                 >
                   Open PRD
                 </Button>
@@ -198,7 +198,7 @@ export default function ProjectPage() {
             )}
           </div>
 
-          <div className="card overflow-hidden border border-gray-200 shadow-sm bg-white">
+          <div className="card overflow-hidden bg-white">
             {project.generatedDocuments.length > 0 ? (
               <div className="divide-y divide-gray-100">
                 {project.generatedDocuments.map((doc) => {
@@ -295,7 +295,7 @@ export default function ProjectPage() {
         </section>
 
         {/* 6. Discovery (collapsed) */}
-        <section className="card shadow-sm border border-gray-200 overflow-hidden bg-white">
+        <section className="card overflow-hidden bg-white">
           <div
             className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors select-none"
             onClick={() => setIsDiscoveryExpanded(!isDiscoveryExpanded)}
@@ -348,9 +348,9 @@ export default function ProjectPage() {
                         key={stepId}
                         onClick={() => handleGoToStep(index)}
                         title={`Go to step ${index + 1}`}
-                        className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-lg transition-all border ${
+                        className={`flex flex-col items-center justify-center py-2.5 px-1 transition-all border ${
                           response.isComplete
-                            ? "bg-white text-green-700 hover:bg-green-50 border-green-200 shadow-sm"
+                            ? "bg-white text-green-700 hover:bg-green-50 border-green-200"
                             : "bg-gray-50 text-gray-400 hover:bg-gray-100 border-gray-200"
                         }`}
                       >
@@ -385,7 +385,7 @@ export default function ProjectPage() {
         </section>
 
         {/* 8. Danger Zone (collapsed) */}
-        <section className="card shadow-sm border border-red-200 overflow-hidden">
+        <section className="card border border-red-200 overflow-hidden">
           <div
             className="flex items-center justify-between p-4 bg-red-50/50 cursor-pointer hover:bg-red-50 transition-colors select-none"
             onClick={() => setIsDangerZoneExpanded(!isDangerZoneExpanded)}

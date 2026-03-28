@@ -37,7 +37,7 @@ const SearchBar = ({
       placeholder="Search projects..."
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all shadow-sm text-sm"
+      className="w-full pl-10 pr-4 py-2 border-0 border-b-2 border-b-gray-300 bg-gray-50 focus:outline-none focus:border-b-primary-600 focus:bg-white transition-all text-sm text-gray-900 placeholder-gray-500"
     />
   </div>
 );
@@ -106,16 +106,16 @@ const ProjectCard = ({
   return (
     <div
       onClick={() => onOpenProject(project.id)}
-      className={`group relative bg-white rounded-xl p-5 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border ${
+      className={`group relative bg-white p-5 cursor-pointer transition-colors duration-150 border ${
         isMostRecent
-          ? "border-primary-400 shadow-md ring-1 ring-primary-50"
-          : "border-gray-200 shadow-sm"
+          ? "border-primary-600 border-l-4 border-l-primary-600"
+          : "border-gray-200 hover:border-primary-600"
       }`}
     >
       {/* Header & Quick Actions */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0 border border-primary-100">
+          <div className="w-10 h-10 bg-primary-10 flex items-center justify-center flex-shrink-0 border border-primary-20">
             <svg
               className="w-5 h-5 text-primary-600"
               fill="none"
@@ -144,7 +144,7 @@ const ProjectCard = ({
 
         {/* Quick Actions Menu (Visible on Hover) */}
         <div
-          className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-md shadow-sm border border-gray-100 p-0.5 z-10"
+          className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-200 p-0.5 z-10"
           onClick={(e) => e.stopPropagation()}
         >
           <button
@@ -261,7 +261,7 @@ const ProjectCard = ({
       {/* Metadata & Status */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <span
-          className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+          className={`text-xs font-semibold px-2 py-0.5 border ${
             isCompleted
               ? "bg-green-50 text-green-700 border-green-200"
               : "bg-blue-50 text-blue-700 border-blue-200"
@@ -294,13 +294,13 @@ const ProjectCard = ({
       <div className="mb-6">
         <div className="flex justify-between items-center text-xs mb-1.5">
           <span className="text-gray-500 font-medium">Document Progress</span>
-          <span className="text-gray-600 font-medium bg-gray-100 px-2 py-0.5 rounded-full">
+          <span className="text-gray-600 font-medium bg-gray-100 px-2 py-0.5">
             {generatedDocsCount}/{TOTAL_DOCS} Generated
           </span>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+        <div className="w-full bg-gray-200 h-1 overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${isCompleted ? "bg-green-500" : "bg-primary-500"}`}
+            className={`h-full transition-all duration-500 ${isCompleted ? "bg-green-500" : "bg-primary-600"}`}
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -413,12 +413,13 @@ export default function Dashboard() {
   }, [projects, searchQuery, activeFilter]);
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <header className="bg-white border-b sticky top-0 z-20">
+    <div className="min-h-screen bg-gray-50">
+      {/* IBM Carbon-style header: white, 1px bottom border, no shadow */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center shadow-sm group-hover:bg-primary-700 transition-colors">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="w-8 h-8 bg-primary-600 flex items-center justify-center group-hover:bg-primary-700 transition-colors">
                 <svg
                   className="w-5 h-5 text-white"
                   fill="none"
@@ -433,7 +434,7 @@ export default function Dashboard() {
                   />
                 </svg>
               </div>
-              <span className="text-xl font-bold text-gray-900 tracking-tight">
+              <span className="text-lg font-semibold text-gray-900 tracking-tight">
                 Brainstormer
               </span>
             </Link>
@@ -473,7 +474,7 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-2 border border-gray-200">
             <FilterTabs
               activeFilter={activeFilter}
               onFilterChange={setActiveFilter}
@@ -484,7 +485,7 @@ export default function Dashboard() {
 
         {projects.length === 0 ? (
           <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-16 text-center max-w-2xl mx-auto mt-12 shadow-sm">
-            <div className="w-20 h-20 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-primary-50/50">
+            <div className="w-20 h-20 bg-primary-10 flex items-center justify-center mx-auto mb-6">
               <svg
                 className="w-10 h-10 text-primary-500"
                 fill="none"
@@ -579,7 +580,7 @@ export default function Dashboard() {
               value={newProjectTitle}
               onChange={(e) => setNewProjectTitle(e.target.value)}
               placeholder="e.g., Mobile Fitness Tracker"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow text-base"
+              className="w-full px-4 py-2.5 border-0 border-b-2 border-b-gray-300 bg-gray-50 focus:outline-none focus:border-b-primary-600 focus:bg-white transition-colors text-base text-gray-900"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleCreateProject();
