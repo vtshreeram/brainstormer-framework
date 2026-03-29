@@ -1,37 +1,61 @@
 "use client";
-import { AlertTriangle, Clock, CheckCircle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useStore } from "@/store/useStore";
+import { fetchProject, deleteProject as apiDeleteProject } from "@/lib/api-client";
 import { getStatusLabel, formatDate } from "@/data/mockData";
 import { Button, Modal } from "@/components/ui";
+import { Project } from "@/types";
 
 export default function ProjectPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
 
-  const {
-    projects,
-    setCurrentProject,
-    setCurrentStep,
-    getCompletionPercentage,
-    resetWizard,
-    deleteProject,
-  } = useStore();
-
+  const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDiscoveryExpanded, setIsDiscoveryExpanded] = useState(false);
   const [isDangerZoneExpanded, setIsDangerZoneExpanded] = useState(false);
 
-  const project = projects.find((p) => p.id === projectId);
-
   useEffect(() => {
-    if (projectId) {
-      setCurrentProject(projectId);
+    if (!projectId) return;
+    setIsLoading(true);
+    fetchProject(projectId)
+      .then((p) => {
+        setProject(p);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
+  }, [projectId]);
+
+  const handleStartWizard = () => {
+    router.push(`/project/${projectId}/wizard`);
+  };
+
+  const handleGoToStep = (stepIndex: number) => {
+    router.push(`/project/${projectId}/wizard?step=${stepIndex}`);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await apiDeleteProject(projectId);
+      router.push("/");
+    } catch {
+      console.error("Failed to delete project");
     }
-  }, [projectId, setCurrentProject]);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-none animate-spin" />
+      </div>
+    );
+  }
 
   if (!project) {
     return (
@@ -41,7 +65,7 @@ export default function ProjectPage() {
             Project not found
           </h2>
           <p className="text-gray-500 mb-6">
-            This project may have been deleted or doesn't exist.
+            This project may have been deleted or doesn&apos;t exist.
           </p>
           <Link href="/">
             <Button>Return to Dashboard</Button>
@@ -51,32 +75,18 @@ export default function ProjectPage() {
     );
   }
 
-  const completionPercentage = getCompletionPercentage();
+  const totalSteps = 7;
   const currentVersion = project.versions.find((v) => v.isCurrent);
+  const completedSteps = currentVersion
+    ? Object.values(currentVersion.responses).filter((r) => r.isComplete).length
+    : 0;
+  const completionPercentage = Math.round((completedSteps / totalSteps) * 100);
   const docsGenerated = project.generatedDocuments.length > 0;
   const allDocsGenerated = project.generatedDocuments.length >= 5;
   const prdDoc = project.generatedDocuments.find((d) => d.type === "prd");
 
-  const handleStartWizard = () => {
-    resetWizard();
-    setCurrentStep(0);
-    router.push(`/project/${projectId}/wizard`);
-  };
-
-  const handleGoToStep = (stepIndex: number) => {
-    setCurrentStep(stepIndex);
-    router.push(`/project/${projectId}/wizard`);
-  };
-
-  const handleDelete = () => {
-    deleteProject(projectId);
-    setIsDeleteModalOpen(false);
-    router.push("/");
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb Navigation */}
       <div className="bg-white border-b sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-6 py-2 flex items-center gap-2 text-xs font-medium text-gray-500">
           <Link href="/" className="hover:text-primary-600 transition-colors">
@@ -99,7 +109,6 @@ export default function ProjectPage() {
         </div>
       </div>
 
-      {/* 1. Header (Project Name + Open PRD) */}
       <header className="bg-white border-b border-b border-gray-200 relative z-10">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -108,7 +117,6 @@ export default function ProjectPage() {
                 {project.title}
               </h1>
 
-              {/* Compact Metadata Display */}
               <div className="flex flex-wrap items-center gap-3 text-xs">
                 <div className="flex items-center gap-1 font-medium text-gray-600">
                   <svg
@@ -143,7 +151,7 @@ export default function ProjectPage() {
                   Edited {formatDate(project.updatedAt)}
                 </div>
                 <span
-                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold border ${
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-none text-[11px] font-bold border ${
                     project.status === "discovery_complete"
                       ? "bg-green-50 text-green-700 border-green-200"
                       : project.status === "documents_generated"
@@ -177,15 +185,13 @@ export default function ProjectPage() {
           </div>
         </div>
       </header>
-      <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
 
-        {/* 4. Generated Documents (main section) */}
+      <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-gray-900">
               Generated Documents
             </h2>
-            {/* 5. Improve "Generate Remaining Documents" */}
             {docsGenerated && !allDocsGenerated && (
               <Button
                 variant="ghost"
@@ -207,14 +213,12 @@ export default function ProjectPage() {
                     <div
                       key={doc.id}
                       className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 hover:bg-gray-50 transition-colors ${
-                        isPRD
-                          ? "bg-primary-50/20 border-l-2 border-primary-500"
-                          : ""
+                        isPRD ? "bg-primary-50/20 border-l-2 border-primary-500" : ""
                       }`}
                     >
                       <div className="flex items-center gap-3 mb-3 sm:mb-0">
                         <div
-                          className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 ${isPRD ? "bg-primary-100" : "bg-gray-100"}`}
+                          className={`w-8 h-8 rounded-none flex items-center justify-center flex-shrink-0 ${isPRD ? "bg-primary-100" : "bg-gray-100"}`}
                         >
                           <svg
                             className={`w-4 h-4 ${isPRD ? "text-primary-600" : "text-gray-500"}`}
@@ -236,13 +240,13 @@ export default function ProjectPage() {
                               {doc.title}
                             </h3>
                             {isPRD && (
-                              <span className="text-[10px] uppercase font-bold text-primary-600 bg-primary-100 px-1.5 rounded">
+                              <span className="text-[10px] uppercase font-bold text-primary-600 bg-primary-100 px-1.5 rounded-none">
                                 Primary
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[11px] font-medium text-green-700 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">
+                            <span className="text-[11px] font-medium text-green-700 bg-green-50 px-1.5 py-0.5 rounded-none border border-green-100">
                               Generated
                             </span>
                             <span className="text-xs text-gray-400 font-medium">
@@ -281,7 +285,7 @@ export default function ProjectPage() {
             ) : (
               <div className="p-8 text-center bg-gray-50/50">
                 <p className="text-gray-500 mb-4 text-sm">
-                  You haven't generated any documents for this project yet.
+                  You haven&apos;t generated any documents for this project yet.
                 </p>
                 <Button
                   size="sm"
@@ -294,7 +298,6 @@ export default function ProjectPage() {
           </div>
         </section>
 
-        {/* 6. Discovery (collapsed) */}
         <section className="card overflow-hidden bg-white">
           <div
             className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors select-none"
@@ -304,7 +307,7 @@ export default function ProjectPage() {
               <h2 className="text-base font-bold text-gray-900">
                 Discovery Progress
               </h2>
-              <span className="text-sm text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded">
+              <span className="text-sm text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-none">
                 {completionPercentage === 100
                   ? "Completed (7/7 steps)"
                   : `${completionPercentage}% complete`}
@@ -338,53 +341,51 @@ export default function ProjectPage() {
             </div>
           </div>
 
-          {isDiscoveryExpanded && (
+          {isDiscoveryExpanded && currentVersion && (
             <div className="p-4 border-t border-gray-100 bg-gray-50/50">
               <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                {currentVersion &&
-                  Object.entries(currentVersion.responses).map(
-                    ([stepId, response], index) => (
-                      <button
-                        key={stepId}
-                        onClick={() => handleGoToStep(index)}
-                        title={`Go to step ${index + 1}`}
-                        className={`flex flex-col items-center justify-center py-2.5 px-1 transition-all border ${
-                          response.isComplete
-                            ? "bg-white text-green-700 hover:bg-green-50 border-green-200"
-                            : "bg-gray-50 text-gray-400 hover:bg-gray-100 border-gray-200"
-                        }`}
-                      >
-                        <span className="text-sm font-bold mb-0.5">
-                          {response.isComplete ? (
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          ) : (
-                            <span>{index + 1}</span>
-                          )}
-                        </span>
-                        <span className="text-[10px] uppercase tracking-wider font-semibold opacity-70">
-                          Step {index + 1}
-                        </span>
-                      </button>
-                    ),
-                  )}
+                {Object.entries(currentVersion.responses).map(
+                  ([stepId, response], index) => (
+                    <button
+                      key={stepId}
+                      onClick={() => handleGoToStep(index)}
+                      title={`Go to step ${index + 1}`}
+                      className={`flex flex-col items-center justify-center py-2.5 px-1 transition-all border ${
+                        response.isComplete
+                          ? "bg-white text-green-700 hover:bg-green-50 border-green-200"
+                          : "bg-gray-50 text-gray-400 hover:bg-gray-100 border-gray-200"
+                      }`}
+                    >
+                      <span className="text-sm font-bold mb-0.5">
+                        {response.isComplete ? (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        ) : (
+                          <span>{index + 1}</span>
+                        )}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wider font-semibold opacity-70">
+                        Step {index + 1}
+                      </span>
+                    </button>
+                  ),
+                )}
               </div>
             </div>
           )}
         </section>
 
-        {/* 8. Danger Zone (collapsed) */}
         <section className="card border border-red-200 overflow-hidden">
           <div
             className="flex items-center justify-between p-4 bg-red-50/50 cursor-pointer hover:bg-red-50 transition-colors select-none"
@@ -432,7 +433,6 @@ export default function ProjectPage() {
         </section>
       </main>
 
-      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

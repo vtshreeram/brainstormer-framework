@@ -42,7 +42,7 @@ function ToastItem({ toast }: { toast: ToastType }) {
     <div className={`
       flex items-start gap-3 px-4 py-3 bg-white border border-gray-200
       border-l-4 ${borderColors[toast.type]}
-      shadow-md animate-in slide-in-from-right min-w-[280px] max-w-sm
+      shadow-none animate-in slide-in-from-right min-w-[280px] max-w-sm
     `}>
       <div className="mt-0.5">{icons[toast.type]}</div>
       <p className="text-sm text-gray-800 flex-1 leading-snug">{toast.message}</p>

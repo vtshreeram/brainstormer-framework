@@ -103,7 +103,7 @@ function MessageBubble({ message }: { message: Message }) {
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] bg-primary-600 text-white px-4 py-2.5 text-sm leading-relaxed">
+        <div className="max-w-[85%] bg-[#0f62fe] text-white px-4 py-2.5 text-sm leading-relaxed rounded-none">
           {message.text}
         </div>
       </div>
@@ -114,21 +114,21 @@ function MessageBubble({ message }: { message: Message }) {
   if (message.isLoading) {
     return (
       <div className="flex items-start gap-2.5">
-        <div className="flex-shrink-0 w-7 h-7 bg-primary-10 flex items-center justify-center mt-0.5">
+        <div className="flex-shrink-0 w-7 h-7 bg-primary-10 flex items-center justify-center mt-0.5 rounded-none">
           <SparklesIcon className="w-3.5 h-3.5 text-violet-600" />
         </div>
-        <div className="bg-gray-100 px-4 py-3 max-w-[85%]">
+        <div className="bg-gray-100 px-4 py-3 max-w-[85%] rounded-none">
           <div className="flex items-center gap-1.5">
             <span
-              className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
+              className="w-1.5 h-1.5 rounded-none bg-gray-400 animate-bounce"
               style={{ animationDelay: '0ms' }}
             />
             <span
-              className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
+              className="w-1.5 h-1.5 rounded-none bg-gray-400 animate-bounce"
               style={{ animationDelay: '150ms' }}
             />
             <span
-              className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
+              className="w-1.5 h-1.5 rounded-none bg-gray-400 animate-bounce"
               style={{ animationDelay: '300ms' }}
             />
           </div>
@@ -139,11 +139,11 @@ function MessageBubble({ message }: { message: Message }) {
 
   return (
     <div className="flex items-start gap-2.5 group/msg">
-      <div className="flex-shrink-0 w-7 h-7 bg-primary-10 flex items-center justify-center mt-0.5">
+      <div className="flex-shrink-0 w-7 h-7 bg-primary-10 flex items-center justify-center mt-0.5 rounded-none">
         <SparklesIcon className="w-3.5 h-3.5 text-violet-600" />
       </div>
       <div className="max-w-[85%]">
-        <div className="bg-gray-100 px-4 py-3">
+        <div className="bg-gray-100 px-4 py-3 rounded-none">
           <div className="prose prose-sm max-w-none text-gray-800 [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_h1]:text-sm [&_h2]:text-sm [&_h3]:text-xs [&_code]:text-xs [&_table]:text-xs">
             <ReactMarkdown disableFormatting>{message.text}</ReactMarkdown>
           </div>

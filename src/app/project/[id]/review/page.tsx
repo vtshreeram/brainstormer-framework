@@ -1,61 +1,71 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useStore } from '@/store/useStore';
+import { fetchProject } from '@/lib/api-client';
 import { wizardSteps } from '@/data/mockData';
 import { Button, AssumptionList } from '@/components/ui';
+import { Project, Response } from '@/types';
 
 export default function ReviewPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
-  
-  const {
-    projects,
-    responses,
-    setCurrentProject,
-    setCurrentStep,
-    confirmAssumption,
-    updateResponse
-  } = useStore();
-  
-  const project = projects.find(p => p.id === projectId);
-  
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    if (projectId) {
-      setCurrentProject(projectId);
-    }
-  }, [projectId, setCurrentProject]);
-  
-  if (!project) {
-    return <div>Loading...</div>;
+    if (!projectId) return;
+    setIsLoading(true);
+    fetchProject(projectId)
+      .then((p) => {
+        setProject(p);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
+  }, [projectId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
-  
+
+  if (!project) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">Project not found</p>
+      </div>
+    );
+  }
+
+  const currentVersion = project.versions.find((v) => v.isCurrent);
+  const responses: Record<string, Response> = currentVersion?.responses || {};
+
   const handleEdit = (stepIndex: number) => {
-    setCurrentStep(stepIndex);
-    router.push(`/project/${projectId}/wizard`);
+    router.push(`/project/${projectId}/wizard?step=${stepIndex}`);
   };
-  
-  const handleAssumptionConfirm = (stepId: string, assumptionId: string) => {
-    confirmAssumption(stepId, assumptionId);
-  };
-  
+
   const handleGenerate = () => {
     router.push(`/project/${projectId}/generate`);
   };
-  
+
   const allAssumptions = Object.entries(responses)
-    .flatMap(([stepId, response]) => 
-      (response?.assumptions || []).map(a => ({ ...a, stepId }))
+    .flatMap(([stepId, response]) =>
+      (response?.assumptions || []).map((a) => ({ ...a, stepId }))
     );
-  
-  const unconfirmedAssumptions = allAssumptions.filter(a => !a.confirmed);
+
+  const unconfirmedAssumptions = allAssumptions.filter((a) => !a.confirmed);
   const hasIncompleteSteps = wizardSteps.some(
-    (step, index) => !responses[step.id]?.isComplete
+    (step) => !responses[step.id]?.isComplete
   );
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -73,7 +83,7 @@ export default function ReviewPage() {
           </div>
         </div>
       </header>
-      
+
       <main className="max-w-3xl mx-auto px-6 py-8">
         {unconfirmedAssumptions.length > 0 && (
           <div className="card p-6 mb-6 border-orange-200 bg-orange-50">
@@ -81,19 +91,16 @@ export default function ReviewPage() {
               Assumptions to Confirm
             </h2>
             <AssumptionList
-              assumptions={unconfirmedAssumptions.map(a => ({
+              assumptions={unconfirmedAssumptions.map((a) => ({
                 ...a,
-                confirmed: false
+                confirmed: false,
               }))}
-              onConfirm={(assumptionId) => {
-                const stepId = unconfirmedAssumptions.find(a => a.id === assumptionId)?.stepId;
-                if (stepId) handleAssumptionConfirm(stepId, assumptionId);
-              }}
+              onConfirm={() => {}}
               showHeader={false}
             />
           </div>
         )}
-        
+
         {hasIncompleteSteps && (
           <div className="card p-6 mb-6 border-yellow-200 bg-yellow-50">
             <p className="text-yellow-800">
@@ -101,22 +108,23 @@ export default function ReviewPage() {
             </p>
           </div>
         )}
-        
+
         <div className="space-y-4">
           {wizardSteps.map((step, index) => {
             const response = responses[step.id];
             const isComplete = response?.isComplete;
             const hasAssumptions = response?.assumptions && response.assumptions.length > 0;
-            const hasUnconfirmed = hasAssumptions && response.assumptions.some(a => !a.confirmed);
-            
+            const hasUnconfirmed = hasAssumptions && response.assumptions.some((a) => !a.confirmed);
+
             return (
               <div key={step.id} className="card p-6">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`
-                      w-8 h-8 flex items-center justify-center text-sm font-medium
-                      ${isComplete ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}
-                    `}>
+                    <div
+                      className={`w-8 h-8 flex items-center justify-center text-sm font-medium ${
+                        isComplete ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
                       {isComplete ? (
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -128,7 +136,8 @@ export default function ReviewPage() {
                     <h3 className="font-semibold text-gray-900">{step.title}</h3>
                     {hasUnconfirmed && (
                       <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
-                        {response.assumptions.filter(a => !a.confirmed).length} assumption{response.assumptions.filter(a => !a.confirmed).length > 1 ? 's' : ''}
+                        {response.assumptions.filter((a) => !a.confirmed).length} assumption
+                        {response.assumptions.filter((a) => !a.confirmed).length > 1 ? 's' : ''}
                       </span>
                     )}
                   </div>
@@ -139,7 +148,7 @@ export default function ReviewPage() {
                     Edit
                   </button>
                 </div>
-                
+
                 <div className="ml-11 space-y-3">
                   {response?.answer ? (
                     <p className="text-gray-600 whitespace-pre-wrap">{response.answer}</p>
@@ -147,7 +156,6 @@ export default function ReviewPage() {
                     <p className="text-gray-400 italic">No answer provided</p>
                   )}
 
-                  {/* Follow-up Q&A */}
                   {response?.followUpQuestion && (
                     <div className="pl-4 border-l-2 border-primary-200 mt-3">
                       <p className="text-xs font-medium text-primary-600 uppercase tracking-wide mb-1">
@@ -170,7 +178,7 @@ export default function ReviewPage() {
             );
           })}
         </div>
-        
+
         <div className="mt-8 flex justify-between items-center">
           <Link href={`/project/${projectId}/wizard`}>
             <Button variant="secondary">
@@ -180,7 +188,7 @@ export default function ReviewPage() {
               Back to Wizard
             </Button>
           </Link>
-          
+
           <Button onClick={handleGenerate}>
             Generate Documents
             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

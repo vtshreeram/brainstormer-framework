@@ -13,16 +13,16 @@ export function MarkdownRenderer({ children, className = '', disableFormatting =
 
   const components: Components = disableFormatting ? {} : {
     h1: ({ node, ...props }) => (
-      <h1 className="text-3xl font-bold text-primary-700 mt-10 mb-6 border-b border-gray-200 pb-3" {...props} />
+      <h1 className="text-3xl font-bold text-[#161616] mt-10 mb-6 border-b border-gray-200 pb-3" {...props} />
     ),
     h2: ({ node, ...props }) => (
-      <h2 className="text-2xl font-bold text-primary-700 mt-8 mb-5" {...props} />
+      <h2 className="text-2xl font-bold text-[#161616] mt-8 mb-5" {...props} />
     ),
     h3: ({ node, ...props }) => (
-      <h3 className="text-xl font-semibold text-primary-700 mt-6 mb-4" {...props} />
+      <h3 className="text-xl font-semibold text-[#161616] mt-6 mb-4" {...props} />
     ),
     h4: ({ node, ...props }) => (
-      <h4 className="text-lg font-medium text-primary-700 mt-5 mb-3" {...props} />
+      <h4 className="text-lg font-medium text-[#161616] mt-5 mb-3" {...props} />
     ),
     p: ({ node, ...props }) => (
       <p className="text-gray-700 leading-relaxed mb-5" {...props} />
@@ -40,19 +40,19 @@ export function MarkdownRenderer({ children, className = '', disableFormatting =
       <a className="text-primary-600 hover:text-primary-800 hover:underline transition-colors font-medium" {...props} />
     ),
     blockquote: ({ node, ...props }) => (
-      <blockquote className="border-l-4 border-primary-400 pl-5 italic text-gray-600 my-6 bg-primary-50/50 py-3 pr-4 rounded-r-lg" {...props} />
+      <blockquote className="border-l-4 border-primary-400 pl-5 italic text-gray-600 my-6 bg-primary-50/50 py-3 pr-4 rounded-none" {...props} />
     ),
     // react-markdown v9: no inline prop — detect inline vs block by className
     code: ({ node, className: codeClassName, children: codeChildren, ...props }) => {
       const isBlock = Boolean(codeClassName && codeClassName.startsWith('language-'));
       if (isBlock) {
         return (
-          <div className="my-6 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+          <div className="my-6 rounded-none overflow-hidden border border-gray-200 shadow-none">
             <div className="bg-gray-800 px-4 py-2.5 flex items-center gap-2 border-b border-gray-700">
               <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <div className="w-3 h-3 rounded-none bg-red-500" />
+                <div className="w-3 h-3 rounded-none bg-yellow-500" />
+                <div className="w-3 h-3 rounded-none bg-green-500" />
               </div>
             </div>
             <pre className="bg-gray-900 text-gray-100 p-4 overflow-x-auto text-sm font-mono leading-relaxed">
@@ -62,7 +62,7 @@ export function MarkdownRenderer({ children, className = '', disableFormatting =
         );
       }
       return (
-        <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm font-mono border border-gray-200" {...props}>
+        <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded-none text-sm font-mono border border-gray-200" {...props}>
           {codeChildren}
         </code>
       );

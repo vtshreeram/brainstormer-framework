@@ -120,7 +120,7 @@ function Spinner({ className = '' }: { className?: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SkeletonBar({ width = 'w-full', height = 'h-3' }: { width?: string; height?: string }) {
-  return <div className={`${width} ${height} bg-gray-200 rounded animate-pulse`} />;
+  return <div className={`${width} ${height} bg-gray-200 rounded-none animate-pulse`} />;
 }
 
 function LoadingSkeleton() {
@@ -220,7 +220,7 @@ function SuggestionCard({ suggestion, index, onAddToDocument, docTypeLabel }: Su
             </h4>
             <span
               className={`
-                inline-flex items-center px-1.5 py-0.5 rounded
+                inline-flex items-center px-1.5 py-0.5 rounded-none
                 text-[10px] font-semibold leading-none
                 ${tag.color}
               `}
@@ -236,7 +236,7 @@ function SuggestionCard({ suggestion, index, onAddToDocument, docTypeLabel }: Su
           title="Copy suggestion"
           aria-label="Copy suggestion"
           className={`
-            flex-shrink-0 mt-0.5 p-1.5 rounded-md
+            flex-shrink-0 mt-0.5 p-1.5 rounded-none
             transition-colors duration-150
             ${copied
               ? 'text-green-600 bg-green-50'
@@ -273,7 +273,7 @@ function SuggestionCard({ suggestion, index, onAddToDocument, docTypeLabel }: Su
           <button
             onClick={handleAdd}
             className={`
-              text-xs font-medium px-2 py-0.5 rounded transition-colors duration-150
+              text-xs font-medium px-2 py-0.5 rounded-none transition-colors duration-150
               ${added
                 ? 'text-green-700 bg-green-50'
                 : 'text-violet-700 bg-violet-50 hover:bg-violet-100'
@@ -331,7 +331,7 @@ export function AiSuggestionsPanel({
                   AI Suggestions
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Based on your PRD
+                  Based on your {docTypeLabel ?? 'Document'}
                 </p>
               </div>
 
@@ -360,7 +360,7 @@ export function AiSuggestionsPanel({
               "
             >
               {isLoading ? <Spinner className="w-4 h-4" /> : <RefreshIcon className="w-4 h-4" />}
-              {isLoading ? 'Analysing PRD…' : 'Refresh Suggestions'}
+              {isLoading ? `Analysing ${docTypeLabel ?? 'Document'}…` : 'Refresh Suggestions'}
             </button>
           </div>
 
@@ -380,13 +380,13 @@ export function AiSuggestionsPanel({
                   <h3 className="text-sm font-semibold text-gray-800">
                     Product Improvement Ideas
                   </h3>
-                  <span className="text-[11px] font-semibold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full leading-none">
+                  <span className="text-[11px] font-semibold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-none leading-none">
                     {suggestions.suggestions.length}
                   </span>
                 </div>
 
                 <p className="text-xs text-gray-400 mb-4 ml-6 leading-relaxed">
-                  Actionable improvements identified from your PRD goals, user context, and feature set.
+                  Actionable improvements identified from your {docTypeLabel ?? 'Document'} goals, user context, and feature set.
                 </p>
 
                 {/* Suggestion list */}
@@ -431,7 +431,7 @@ export function AiSuggestionsPanel({
             <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex-shrink-0">
               <p className="text-xs text-gray-400 flex items-center gap-1.5">
                 <SparklesIcon className="w-3 h-3 flex-shrink-0 text-violet-400" />
-                AI suggestions are based on your PRD content and common product patterns. Always validate with user research.
+                AI suggestions are based on your {docTypeLabel ?? 'Document'} content and common product patterns. Always validate with user research.
               </p>
             </div>
           )}

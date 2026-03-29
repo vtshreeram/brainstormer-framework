@@ -188,8 +188,8 @@ function ActionBar({
   return (
     <div
       className="
-        flex items-center gap-0.5 bg-white border border-gray-200 rounded-full
-        px-1.5 py-1 shadow-md shadow-gray-200/70
+        flex items-center gap-0.5 bg-white border border-gray-200 rounded-none
+        px-1.5 py-1 shadow-none
       "
       onClick={(e) => e.stopPropagation()}
     >
@@ -198,7 +198,7 @@ function ActionBar({
         <button
           onClick={onAskAI}
           className={`
-            flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
+            flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium
             transition-all duration-150
             ${
               isAskActive
@@ -219,7 +219,7 @@ function ActionBar({
         <button
           onClick={onImprove}
           className="
-            flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
+            flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium
             text-gray-500 hover:bg-amber-50 hover:text-amber-600
             transition-all duration-150
           "
@@ -242,7 +242,7 @@ function ActionBar({
                 onRegenerate();
               }}
               className="
-                flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
+                flex items-center gap-1 px-2 py-1 rounded-none text-xs font-medium
                 text-gray-500 hover:bg-violet-50 hover:text-violet-600
                 transition-all duration-150
               "
@@ -281,10 +281,10 @@ function ImproveOptionsView({
   const [instruction, setInstruction] = useState("");
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mt-4 animate-in slide-in-from-top-1 fade-in duration-200">
+    <div className="bg-white rounded-none border border-gray-200 shadow-none overflow-hidden mt-4 animate-in slide-in-from-top-1 fade-in duration-200">
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center">
+          <div className="w-6 h-6 rounded-none bg-emerald-100 text-emerald-600 flex items-center justify-center">
             <ImproveIcon />
           </div>
           <span className="text-sm font-semibold text-gray-700">
@@ -298,7 +298,7 @@ function ImproveOptionsView({
             e.stopPropagation();
             onCancel();
           }}
-          className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-200 rounded"
+          className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-200 rounded-none"
         >
           <svg
             className="w-4 h-4"
@@ -321,7 +321,7 @@ function ImproveOptionsView({
         <div>
           <button
             onClick={() => onGenerate(null)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-lg font-medium hover:from-emerald-600 hover:to-teal-600 transition-all shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-none font-medium hover:from-emerald-600 hover:to-teal-600 transition-all shadow-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
           >
             <svg
               className="w-4 h-4"
@@ -355,25 +355,25 @@ function ImproveOptionsView({
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => onGenerate("Improve clarity")}
-            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors border border-gray-200"
+            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-none hover:bg-gray-200 transition-colors border border-gray-200"
           >
             Improve clarity
           </button>
           <button
             onClick={() => onGenerate("Make it concise")}
-            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors border border-gray-200"
+            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-none hover:bg-gray-200 transition-colors border border-gray-200"
           >
             Make it concise
           </button>
           <button
             onClick={() => onGenerate("Add more details")}
-            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors border border-gray-200"
+            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-none hover:bg-gray-200 transition-colors border border-gray-200"
           >
             Add more details
           </button>
           <button
             onClick={() => onGenerate("Make it more professional")}
-            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors border border-gray-200"
+            className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-none hover:bg-gray-200 transition-colors border border-gray-200"
           >
             Make it professional
           </button>
@@ -386,7 +386,7 @@ function ImproveOptionsView({
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
             placeholder="What would you like to improve?"
-            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+            className="flex-1 text-sm border border-gray-300 rounded-none px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
             onKeyDown={(e) =>
               e.key === "Enter" &&
               instruction.trim() &&
@@ -396,7 +396,7 @@ function ImproveOptionsView({
           <button
             onClick={() => onGenerate(instruction.trim())}
             disabled={!instruction.trim()}
-            className="px-4 py-2.5 bg-emerald-100 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2.5 bg-emerald-100 text-emerald-700 font-semibold rounded-none hover:bg-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Generate
           </button>
@@ -448,10 +448,10 @@ function ImprovePreviewView({
     <div className="mt-3 space-y-4 animate-in slide-in-from-top-1 fade-in duration-200">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Original version */}
-        <div className="rounded-lg border border-gray-200 overflow-hidden flex flex-col shadow-sm bg-white">
+        <div className="rounded-none border border-gray-200 overflow-hidden flex flex-col shadow-none bg-white">
           <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-gray-400" />
+              <div className="w-2 h-2 rounded-none bg-gray-400" />
               <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
                 Original
               </span>
@@ -463,19 +463,19 @@ function ImprovePreviewView({
         </div>
 
         {/* Improved version */}
-        <div className="rounded-lg border border-emerald-200 overflow-hidden flex flex-col shadow-md bg-white relative">
+        <div className="rounded-none border border-emerald-200 overflow-hidden flex flex-col shadow-none bg-white relative">
           <div className="px-4 py-2.5 bg-emerald-50 border-b border-emerald-200 flex-shrink-0 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="w-2 h-2 rounded-none bg-emerald-500" />
               <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
                 Improved Version
               </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded text-emerald-600 bg-emerald-100 border border-emerald-200 font-bold ml-1">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-none text-emerald-600 bg-emerald-100 border border-emerald-200 font-bold ml-1">
                 AI Generated
               </span>
             </div>
             {isEditing && (
-              <span className="text-[10px] px-2 py-0.5 rounded text-gray-500 bg-white border border-gray-200 font-bold shadow-sm">
+              <span className="text-[10px] px-2 py-0.5 rounded-none text-gray-500 bg-white border border-gray-200 font-bold shadow-none">
                 Editing manually
               </span>
             )}
@@ -512,7 +512,7 @@ function ImprovePreviewView({
             onCancel();
           }}
           disabled={isRegenerating}
-          className="px-4 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-none text-sm font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
@@ -524,7 +524,7 @@ function ImprovePreviewView({
               setIsEditing((prev) => !prev);
             }}
             disabled={isRegenerating}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 bg-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-none text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 bg-white shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isEditing ? "Done Editing" : "Edit Manually"}
           </button>
@@ -536,7 +536,7 @@ function ImprovePreviewView({
               onRegenerate();
             }}
             disabled={isRegenerating}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-emerald-700 hover:bg-emerald-100 border border-emerald-200 bg-emerald-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-none text-sm font-medium text-emerald-700 hover:bg-emerald-100 border border-emerald-200 bg-emerald-50 transition-colors shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isRegenerating ? (
               <Spinner size="sm" />
@@ -564,7 +564,7 @@ function ImprovePreviewView({
               onAccept(editedContent);
             }}
             disabled={isRegenerating}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-5 py-2 rounded-none text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg
               className="w-4 h-4"
@@ -621,21 +621,21 @@ function RegenerateView({
   return (
     <div className="space-y-3">
       {/* New version */}
-      <div className="rounded-lg border border-violet-200 overflow-hidden">
+      <div className="rounded-none border border-violet-200 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2.5 bg-violet-50 border-b border-violet-200">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-violet-500" />
+            <div className="w-2 h-2 rounded-none bg-violet-500" />
             <span className="text-xs font-semibold text-violet-700 uppercase tracking-wide">
               New Version
             </span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600 border border-violet-200 font-medium">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-none bg-violet-100 text-violet-600 border border-violet-200 font-medium">
               <RefreshCw className="w-4 h-4 mr-1 inline" /> Regenerated
             </span>
           </div>
           <button
             onClick={handleCopy}
             className="
-              flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium
+              flex items-center gap-1 px-2 py-1 rounded-none text-[11px] font-medium
               text-violet-600 hover:bg-violet-100 transition-colors
             "
           >
@@ -653,9 +653,9 @@ function RegenerateView({
         <button
           onClick={onAccept}
           className="
-            flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold
+            flex items-center gap-1.5 px-4 py-2 rounded-none text-sm font-semibold
             bg-violet-600 text-white hover:bg-violet-700
-            transition-colors shadow-sm
+            transition-colors shadow-none
           "
         >
           <svg
@@ -676,7 +676,7 @@ function RegenerateView({
         <button
           onClick={onRegenerateAgain}
           className="
-            flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold
+            flex items-center gap-1.5 px-4 py-2 rounded-none text-sm font-semibold
             border border-violet-300 text-violet-700 hover:bg-violet-50
             transition-colors
           "
@@ -692,7 +692,7 @@ function RegenerateView({
             onCancel();
           }}
           className="
-            px-4 py-2 rounded-lg text-sm font-medium
+            px-4 py-2 rounded-none text-sm font-medium
             text-gray-600 hover:bg-gray-100
             transition-colors border border-gray-200
           "
@@ -702,11 +702,11 @@ function RegenerateView({
       </div>
     </div>
   );
-}
+  }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+  // ─── Main component ───────────────────────────────────────────────────────────
 
-export function PRDSectionView({
+  export function PRDSectionView({
   sectionId,
   heading,
   content,
@@ -717,7 +717,7 @@ export function PRDSectionView({
   activeSectionId,
   onActionStart,
   disableRegenerate = false,
-}: PRDSectionViewProps) {
+  }: PRDSectionViewProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [action, setAction] = useState<InlineAction>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -901,7 +901,7 @@ export function PRDSectionView({
   return (
     <div
       className={`
-        relative rounded-xl transition-all duration-200
+        relative rounded-none transition-all duration-200
         ${
           action !== null
             ? action === "improve_preview" || action === "improve_options"
@@ -944,7 +944,7 @@ export function PRDSectionView({
       {action !== null && action !== "improve_options" && (
         <div
           className={`
-            flex items-center justify-between px-4 py-2 mx-5 rounded-lg mb-2
+            flex items-center justify-between px-4 py-2 mx-5 rounded-none mb-2
             ${action === "improve_preview" ? "bg-emerald-100/80 border border-emerald-200" : "bg-violet-100/80 border border-violet-200"}
           `}
         >
