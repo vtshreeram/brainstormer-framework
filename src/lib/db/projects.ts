@@ -1,4 +1,4 @@
-import { query } from '../db';
+import { query, getClient } from '../db';
 import { Project, Version, Response, GeneratedDocument, ShareSettings, Assumption } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -83,50 +83,63 @@ export async function createProject(
   title: string,
   description?: string | null
 ): Promise<Project> {
-  const projectId = uuidv4();
-  const versionId = uuidv4();
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
+    
+    const projectId = uuidv4();
+    const versionId = uuidv4();
 
-  await query(
-    `INSERT INTO projects (id, user_id, title, description, status)
-     VALUES ($1, $2, $3, $4, 'draft')`,
-    [projectId, userId, title, description || null]
-  );
+    await client.query(
+      `INSERT INTO projects (id, user_id, title, description, status)
+       VALUES ($1, $2, $3, $4, 'draft')`,
+      [projectId, userId, title, description || null]
+    );
 
-  await query(
-    `INSERT INTO versions (id, project_id, version_number, name, is_current)
-     VALUES ($1, $2, 'v0.1', 'Initial draft', true)`,
-    [versionId, projectId]
-  );
+    await client.query(
+      `INSERT INTO versions (id, project_id, version_number, name, is_current)
+       VALUES ($1, $2, 'v0.1', 'Initial draft', true)`,
+      [versionId, projectId]
+    );
 
-  await query(
-    `INSERT INTO share_settings (project_id) VALUES ($1)`,
-    [projectId]
-  );
+    await client.query(
+      `INSERT INTO share_settings (project_id) VALUES ($1)`,
+      [projectId]
+    );
 
-  return {
-    id: projectId,
-    title,
-    description: description || null,
-    status: 'draft',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    versions: [
-      {
-        id: versionId,
-        versionNumber: 'v0.1',
-        name: 'Initial draft',
-        createdAt: new Date().toISOString(),
-        isCurrent: true,
-        responses: {},
+    await client.query('COMMIT');
+
+    return {
+      id: projectId,
+      userId,
+      title,
+      description: description || null,
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      versions: [
+        {
+          id: versionId,
+          versionNumber: 'v0.1',
+          name: 'Initial draft',
+          createdAt: new Date().toISOString(),
+          isCurrent: true,
+          responses: {},
+        },
+      ],
+      generatedDocuments: [],
+      shareSettings: {
+        isShared: false,
+        shareToken: null,
+        allowComments: false,
       },
-    ],
-    generatedDocuments: [],
-    shareSettings: {
-      isShared: false,
-      shareToken: null,
-      allowComments: false,
-    },
-  };
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function getProjectsByUserId(userId: string): Promise<Project[]> {
@@ -222,6 +235,7 @@ async function enrichProject(row: ProjectRow): Promise<Project> {
 
   return {
     id: row.id,
+    userId: row.user_id,
     title: row.title,
     description: row.description,
     status: row.status as Project['status'],

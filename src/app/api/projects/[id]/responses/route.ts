@@ -7,6 +7,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = request.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id: projectId } = await params;
     const body = await request.json();
     const { action, stepId, question, answer, isComplete, followUpData } = body;
@@ -14,6 +19,10 @@ export async function POST(
     const project = await getProjectById(projectId);
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    if (project.userId !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const currentVersion = project.versions.find(v => v.isCurrent);
@@ -59,6 +68,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = request.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id: projectId } = await params;
     const { searchParams } = new URL(request.url);
     const stepId = searchParams.get('stepId');
@@ -66,6 +80,10 @@ export async function GET(
     const project = await getProjectById(projectId);
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    if (project.userId !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const currentVersion = project.versions.find(v => v.isCurrent);

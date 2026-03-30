@@ -27,6 +27,7 @@ interface AppState {
   isNewProjectModalOpen: boolean;
   newProjectTitle: string;
 
+  setProjects: (projects: Project[]) => void;
   setCurrentProject: (projectId: string | null) => void;
   setCurrentVersion: (versionId: string | null) => void;
   setCurrentStep: (step: number) => void;
@@ -86,22 +87,23 @@ interface AppState {
 }
 
 export const useStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      projects: mockProjects,
-      currentProjectId: null,
-      currentVersionId: null,
-      currentStep: 0,
-      responses: {},
-      selectedDocuments: defaultDocOptions,
-      toasts: [],
-      isGenerating: false,
-      isNewProjectModalOpen: false,
-      newProjectTitle: "",
-      aiSuggestions: {},
-      isLoadingSuggestions: false,
+  (set, get) => ({
+    projects: [],
+    currentProjectId: null,
+    currentVersionId: null,
+    currentStep: 0,
+    responses: {},
+    selectedDocuments: defaultDocOptions,
+    toasts: [],
+    isGenerating: false,
+    isNewProjectModalOpen: false,
+    newProjectTitle: "",
+    aiSuggestions: {},
+    isLoadingSuggestions: false,
 
-      setCurrentProject: (projectId) => {
+    setProjects: (projects) => set({ projects }),
+
+    setCurrentProject: (projectId) => {
         const project = projectId
           ? get().projects.find((p) => p.id === projectId)
           : null;
@@ -125,6 +127,7 @@ export const useStore = create<AppState>()(
       createProject: (title, description) => {
         const newProject: Project = {
           id: `proj_${uuidv4().slice(0, 8)}`,
+          userId: "", // Added to satisfy type
           title,
           description: description || null,
           status: "draft",
@@ -738,15 +741,6 @@ export const useStore = create<AppState>()(
         return Math.round((completedSteps / totalSteps) * 100);
       },
     }),
-    {
-      name: "brainstormer-storage",
-      partialize: (state) => ({
-        projects: state.projects,
-        currentProjectId: state.currentProjectId,
-        currentVersionId: state.currentVersionId,
-      }),
-    },
-  ),
 );
 
 function generateDocumentContent(

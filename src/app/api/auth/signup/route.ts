@@ -2,24 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { createSession, setSessionCookie, hashPassword } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
+
+const signupSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    const body = await request.json();
+    const result = signupSchema.safeParse(body);
 
-    if (!name || !email || !password) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Name, email, and password are required' },
+        { error: result.error.issues[0].message },
         { status: 400 }
       );
     }
 
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
-        { status: 400 }
-      );
-    }
+    const { name, email, password } = result.data;
 
     const { rows: existingUsers } = await query<{ id: string }>(
       `SELECT id FROM neon_auth.user WHERE email = $1`,

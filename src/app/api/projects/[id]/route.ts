@@ -13,11 +13,20 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = request.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const project = await getProjectById(id);
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    if (project.userId && project.userId !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     return NextResponse.json({ project });
@@ -33,7 +42,22 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = request.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
+    
+    // Check ownership first
+    const project = await getProjectById(id);
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+    if (project.userId && project.userId !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { action, ...data } = body;
 
@@ -47,8 +71,8 @@ export async function PATCH(
           title: title?.trim(),
           description: description?.trim(),
         });
-        const project = await getProjectById(id);
-        return NextResponse.json({ project });
+        const updatedProject = await getProjectById(id);
+        return NextResponse.json({ project: updatedProject });
       }
 
       case 'updateStatus': {
@@ -58,8 +82,8 @@ export async function PATCH(
           return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
         }
         await updateProjectStatus(id, status);
-        const project = await getProjectById(id);
-        return NextResponse.json({ project });
+        const updatedProject = await getProjectById(id);
+        return NextResponse.json({ project: updatedProject });
       }
 
       case 'restoreVersion': {
@@ -68,8 +92,8 @@ export async function PATCH(
           return NextResponse.json({ error: 'versionId is required' }, { status: 400 });
         }
         await setVersionCurrent(id, versionId);
-        const project = await getProjectById(id);
-        return NextResponse.json({ project });
+        const updatedProject = await getProjectById(id);
+        return NextResponse.json({ project: updatedProject });
       }
 
       default:
@@ -87,7 +111,22 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = request.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    // Check ownership first
+    const project = await getProjectById(id);
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+    if (project.userId && project.userId !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await deleteProject(id);
     return NextResponse.json({ success: true });
   } catch (error: unknown) {

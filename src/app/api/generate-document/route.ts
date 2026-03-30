@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { buildPrompt, DOCUMENT_TITLES } from '@/lib/prompts';
 import { DocumentType, Response } from '@/types';
+import { getProjectById } from '@/lib/db/projects';
 
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
 
@@ -24,6 +25,11 @@ function getOpenAIClient(): OpenAI {
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = request.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body: GenerateDocumentRequest = await request.json();
     const { projectId, docType, projectTitle, responses, promptVersion } = body;
 
@@ -39,6 +45,15 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: projectId, docType, projectTitle' },
         { status: 400 }
       );
+    }
+
+    // Check ownership
+    const project = await getProjectById(projectId);
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+    if (project.userId !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const prompt = buildPrompt(docType, {

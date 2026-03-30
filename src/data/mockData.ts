@@ -88,6 +88,7 @@ export const documentOptions: DocumentOption[] = [
 export const mockProjects: Project[] = [
   {
     id: 'proj_001',
+    userId: 'user_001',
     title: 'Mobile Fitness Tracker',
     description: 'Workout tracking app with social features and AI-powered workout suggestions',
     status: 'discovery_complete',
@@ -349,6 +350,7 @@ Supabase Auth with:
   },
   {
     id: 'proj_002',
+    userId: 'user_001',
     title: 'Team Collaboration Tool',
     description: null,
     status: 'draft',

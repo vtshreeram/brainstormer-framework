@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useStore } from "@/store/useStore";
 import { fetchProjects, createProject as apiCreateProject, deleteProject as apiDeleteProject } from "@/lib/api-client";
 import { formatDate } from "@/data/mockData";
 import { Button, Modal } from "@/components/ui";
@@ -210,8 +211,8 @@ function AuthPrompt() {
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
+  const { projects, setProjects } = useStore();
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [isNewProjectModalOpen, setNewProjectModalOpen] = useState(false);
@@ -226,7 +227,7 @@ export default function Dashboard() {
     } catch (err) {
       console.error("Failed to load projects:", err);
     }
-  }, [user]);
+  }, [user, setProjects]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -240,7 +241,7 @@ export default function Dashboard() {
     setIsCreating(true);
     try {
       const project = await apiCreateProject(user.id, newProjectTitle.trim());
-      setProjects(prev => [project, ...prev]);
+      setProjects([project, ...projects]);
       setNewProjectModalOpen(false);
       setNewProjectTitle("");
       router.push(`/project/${project.id}/wizard`);
@@ -254,7 +255,7 @@ export default function Dashboard() {
   const handleDeleteProject = async (projectId: string) => {
     try {
       await apiDeleteProject(projectId);
-      setProjects(prev => prev.filter(p => p.id !== projectId));
+      setProjects(projects.filter(p => p.id !== projectId));
     } catch (err) {
       console.error("Failed to delete project:", err);
     }

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { createSession, setSessionCookie, hashPassword } from '@/lib/auth';
-import { v4 as uuidv4 } from 'uuid';
+import { createSession, setSessionCookie, verifyPassword } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,13 +24,12 @@ export async function POST(request: NextRequest) {
 
     if (rows.length === 0) {
       return NextResponse.json(
-        { error: `User with email ${email} not found` },
+        { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
     const user = rows[0];
-    const hashedPassword = await hashPassword(password);
 
     const { rows: accountRows } = await query<{ password: string }>(
       `SELECT password FROM neon_auth.account WHERE "userId" = $1 AND "providerId" = 'email' LIMIT 1`,
@@ -40,14 +38,16 @@ export async function POST(request: NextRequest) {
 
     if (accountRows.length === 0) {
       return NextResponse.json(
-        { error: 'Account not found for user' },
+        { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
-    if (accountRows[0].password !== hashedPassword) {
+    const isPasswordValid = await verifyPassword(password, accountRows[0].password);
+
+    if (!isPasswordValid) {
       return NextResponse.json(
-        { error: `Password mismatch. Expected: ${accountRows[0].password.substring(0, 8)}..., Got: ${hashedPassword.substring(0, 8)}...` },
+        { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
