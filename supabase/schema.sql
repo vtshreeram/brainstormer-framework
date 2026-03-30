@@ -173,3 +173,16 @@ CREATE TRIGGER update_wizard_responses_updated_at
   BEFORE UPDATE ON wizard_responses
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- USER AI SETTINGS (private schema)
+-- Stores per-user BYOK AI configuration (provider + model per role).
+-- ============================================================
+
+CREATE SCHEMA IF NOT EXISTS private;
+
+CREATE TABLE IF NOT EXISTS private.user_ai_settings (
+  user_id    UUID PRIMARY KEY REFERENCES neon_auth.user(id) ON DELETE CASCADE,
+  settings   JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

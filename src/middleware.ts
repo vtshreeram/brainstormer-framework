@@ -27,8 +27,11 @@ export async function middleware(request: NextRequest) {
 
     // Validate session
     try {
-      // Use the connection string from neon's serverless driver
-      const dbUrl = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_7EMRCyNBQz4l@ep-blue-art-a1ym0ofn-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require';
+      const dbUrl = process.env.DATABASE_URL;
+      if (!dbUrl) {
+        console.error('DATABASE_URL is not set');
+        return NextResponse.json({ error: 'Authentication service unavailable' }, { status: 503 });
+      }
       const sql = neon(dbUrl);
       
       const rows = await sql`

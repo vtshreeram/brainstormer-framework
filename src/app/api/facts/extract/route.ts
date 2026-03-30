@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProjectById } from '@/lib/db/projects';
 import { FactExtractionResult } from '@/types/facts';
-import { aiOrchestrator, AIOrchestrator } from '@/lib/ai/orchestrator';
+import { aiOrchestrator } from '@/lib/ai/orchestrator';
+import { getUserAIConfig } from '@/lib/ai/getUserConfig';
 
 const SYSTEM_PROMPT = `
 You are a "Panel of AI Experts" (Product Manager, Solutions Architect, and Security Lead) for the Brainstormer Framework. 
@@ -69,13 +70,7 @@ export async function POST(request: NextRequest) {
     Analyze the input, update the graph, identify logic gaps, and suggest 2-3 deep-thinking follow-up questions.
     `;
 
-    // Fetch personal AI settings
-    const { rows: settingsRows } = await query(
-      `SELECT settings FROM private.user_ai_settings WHERE user_id = $1`,
-      [userId]
-    );
-    
-    const config = settingsRows[0]?.settings || AIOrchestrator.getDefaultConfig();
+    const config = await getUserAIConfig(userId);
 
     const responseContent = await aiOrchestrator.runRole(
       'synthesizer',

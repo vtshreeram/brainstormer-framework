@@ -1,11 +1,16 @@
 import { Pool } from 'pg';
 
+if (!process.env.NEXT_PUBLIC_DB_HOST) throw new Error('NEXT_PUBLIC_DB_HOST is not set');
+if (!process.env.NEXT_PUBLIC_DB_USER) throw new Error('NEXT_PUBLIC_DB_USER is not set');
+if (!process.env.NEXT_PUBLIC_DB_PASSWORD) throw new Error('NEXT_PUBLIC_DB_PASSWORD is not set');
+if (!process.env.NEXT_PUBLIC_DB_NAME) throw new Error('NEXT_PUBLIC_DB_NAME is not set');
+
 const pool = new Pool({
-  host: process.env.NEXT_PUBLIC_DB_HOST || 'ep-blue-art-a1ym0ofn-pooler.ap-southeast-1.aws.neon.tech',
+  host: process.env.NEXT_PUBLIC_DB_HOST,
   port: parseInt(process.env.NEXT_PUBLIC_DB_PORT || '5432'),
-  user: process.env.NEXT_PUBLIC_DB_USER || 'neondb_owner',
-  password: process.env.NEXT_PUBLIC_DB_PASSWORD || 'npg_7EMRCyNBQz4l',
-  database: process.env.NEXT_PUBLIC_DB_NAME || 'neondb',
+  user: process.env.NEXT_PUBLIC_DB_USER,
+  password: process.env.NEXT_PUBLIC_DB_PASSWORD,
+  database: process.env.NEXT_PUBLIC_DB_NAME,
   ssl: { rejectUnauthorized: false },
   max: 20,
   idleTimeoutMillis: 30000,

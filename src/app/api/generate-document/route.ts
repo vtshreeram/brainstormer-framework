@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { buildPrompt, DOCUMENT_TITLES } from '@/lib/prompts';
 import { DocumentType, Response } from '@/types';
 import { getProjectById } from '@/lib/db/projects';
-
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
+import { aiOrchestrator } from '@/lib/ai/orchestrator';
+import { getUserAIConfig } from '@/lib/ai/getUserConfig';
 
 export interface GenerateDocumentRequest {
   projectId: string;
@@ -12,15 +11,6 @@ export interface GenerateDocumentRequest {
   projectTitle: string;
   responses: Record<string, Response>;
   promptVersion?: string;
-}
-
-function getOpenAIClient(): OpenAI {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY environment variable is not set');
-  }
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
 }
 
 export async function POST(request: NextRequest) {
@@ -32,13 +22,6 @@ export async function POST(request: NextRequest) {
 
     const body: GenerateDocumentRequest = await request.json();
     const { projectId, docType, projectTitle, responses, promptVersion } = body;
-
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: 'OpenAI API key is missing. Document generation is currently disabled.' },
-        { status: 503 }
-      );
-    }
 
     if (!projectId || !docType || !projectTitle) {
       return NextResponse.json(
@@ -56,23 +39,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const prompt = buildPrompt(docType, {
-      projectTitle,
-      responses,
-    });
+    const prompt = buildPrompt(docType, { projectTitle, responses });
+    const config = await getUserAIConfig(userId);
 
-    const openai = getOpenAIClient();
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: 'You are an expert technical writer. Output ONLY the document in Markdown format, with no preamble or explanation.' },
+    const content = await aiOrchestrator.runRole(
+      'writer',
+      [
+        {
+          role: 'system',
+          content: 'You are an expert technical writer. Output ONLY the document in Markdown format, with no preamble or explanation.',
+        },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.3,
-      max_tokens: 4096,
-    });
-
-    const content = completion.choices[0]?.message?.content || '';
+      config,
+      { temperature: 0.3, maxTokens: 4096 }
+    );
 
     if (!content || content.trim().length < 50) {
       return NextResponse.json(
@@ -82,6 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     const title = DOCUMENT_TITLES[docType];
+    const writerConfig = config.roles['writer'];
 
     return NextResponse.json({
       id: `doc_${Date.now()}`,
@@ -90,20 +72,12 @@ export async function POST(request: NextRequest) {
       content,
       generatedAt: new Date().toISOString(),
       exportCount: 0,
-      modelId: MODEL,
+      modelId: writerConfig?.model || 'gemini-1.5-pro',
       promptVersion: promptVersion || 'v1',
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[generate-document] Error:', message);
-
-    if (error instanceof OpenAI.APIError) {
-      return NextResponse.json(
-        { error: `OpenAI API error: ${error.message}` },
-        { status: error.status || 500 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Failed to generate document. Please try again.' },
       { status: 500 }

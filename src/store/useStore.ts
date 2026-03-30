@@ -10,10 +10,8 @@ import {
   GeneratedDocument,
   AiSuggestionsResult,
 } from "@/types";
-import {
-  mockProjects,
-  documentOptions as defaultDocOptions,
-} from "@/data/mockData";
+import { documentOptions as defaultDocOptions } from "@/data/mockData";
+import { fetchProjects } from "@/lib/api-client";
 
 import { Fact, FactGraph, Relationship, FactExtractionResult } from "@/types/facts";
 
@@ -44,6 +42,7 @@ interface AppState {
   isProcessingBrainstorm: boolean;
 
   setProjects: (projects: Project[]) => void;
+  loadProjects: (userId: string) => Promise<void>;
   setCurrentProject: (projectId: string | null) => void;
   setCurrentVersion: (versionId: string | null) => void;
   setCurrentStep: (step: number) => void;
@@ -129,6 +128,15 @@ export const useStore = create<AppState>()(
     isProcessingBrainstorm: false,
 
     setProjects: (projects) => set({ projects }),
+
+    loadProjects: async (userId) => {
+      try {
+        const projects = await fetchProjects(userId);
+        set({ projects });
+      } catch (error) {
+        console.error('[store] Failed to load projects:', error);
+      }
+    },
 
     setCurrentProject: (projectId) => {
         const project = projectId
