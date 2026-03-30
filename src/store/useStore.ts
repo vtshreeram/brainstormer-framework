@@ -49,7 +49,7 @@ interface AppState {
   setCurrentStep: (step: number) => void;
 
   // New Actions
-  processUserBrainstorm: (input: string) => Promise<void>;
+  processUserBrainstorm: (userId: string, input: string) => Promise<void>;
   addFact: (fact: Omit<Fact, "id" | "createdAt" | "updatedAt">) => void;
   removeFact: (factId: string) => void;
   updateFact: (factId: string, updates: Partial<Fact>) => void;
@@ -190,7 +190,7 @@ export const useStore = create<AppState>()(
         }));
       },
 
-      processUserBrainstorm: async (input) => {
+      processUserBrainstorm: async (userId, input) => {
         const state = get();
         const userMessage: ChatMessage = {
           id: uuidv4(),
@@ -209,7 +209,7 @@ export const useStore = create<AppState>()(
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "x-user-id": "user_001", // Placeholder
+              "x-user-id": userId,
             },
             body: JSON.stringify({
               projectId: state.currentProjectId,

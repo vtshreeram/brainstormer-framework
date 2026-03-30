@@ -1,33 +1,38 @@
-# Roadmap: Brainstormer "Professional Peer" Intelligence
+# Roadmap: Brainstormer "Master Personal Suite" (BYOK)
 
-This document outlines the strategic tasks to transition the framework into a Fact-First, Peer-Agentic system.
+This document outlines the strategic tasks to transition the framework into a private, multi-model, fact-first "Second Brain" for product engineering.
 
-## 1. The Fact-Graph Architecture (The "Product OS")
-*Goal: Move from flat text to a relational graph of product entities.*
+## 1. The AI Vault (Security & Privacy)
+*Goal: Securely store and manage personal API keys for multiple providers.*
 
-- [ ] **Fact Schema Definition**: Design a JSON schema for core entities (Personas, Features, Constraints, Metrics) and their relationships (e.g., Feature X -> requires -> Infrastructure Y).
-- [ ] **Graph Persistence**: Implement a PostgreSQL/JSONB structure to store and version these fact nodes per project.
-- [ ] **Traceability Engine**: Map which "Fact Nodes" contribute to which sections of the Markdown documents to allow surgical updates.
+- [ ] **Encryption Layer**: Implement `src/lib/encryption.ts` using AES-256-GCM to encrypt/decrypt API keys at rest.
+- [ ] **Key Management UI**: Build a "Personal AI Settings" page to manage:
+    - OpenAI Keys
+    - Anthropic Keys
+    - Google Gemini Keys
+    - Local LLM (Ollama) Endpoints
+- [ ] **Secure Storage**: Add `user_ai_keys` table to PostgreSQL to store encrypted credentials tied to the user profile.
 
-## 2. The Dynamic Peer Wizard (The "Senior Colleague")
-*Goal: Replace the static form with a proactive, decision-oriented conversation.*
+## 2. Multi-Provider Orchestration (The Router)
+*Goal: Use the best "brand" for each specific brainstorming role.*
 
-- [ ] **Actionable Chat UI**: Build a chat interface that supports "Decision Chips" (e.g., buttons to accept/reject AI architectural suggestions).
-- [ ] **Multi-Agent Orchestration**:
-    - **Synthesizer Agent**: Runs in the background to extract facts from the chat.
-    - **Analyst Agent**: Compares facts against industry patterns to find logic gaps.
-    - **Facilitator Agent**: Manages the conversation tone and presents decisions to the user.
-- [ ] **The Convergence Metric**: Implement a "Confidence Score" that triggers the transition from brainstorming to document generation once the Fact Graph is sufficiently complete.
+- [ ] **Universal AI Client**: Create a unified interface `src/lib/ai/client.ts` that abstracts the differences between OpenAI, Anthropic, and Gemini SDKs.
+- [ ] **Role-to-Model Mapping**: Implement logic to route tasks based on user preference:
+    - **PM Role** (e.g., Gemini 1.5 Pro for creative breadth)
+    - **Architect Role** (e.g., Claude 3.5 Sonnet for precise logic)
+    - **Security Role** (e.g., GPT-4o for rigorous standards)
+- [ ] **Fallback Logic**: Automatically switch to a secondary provider if the primary brand hits a rate limit or service outage.
 
-## 3. The Pattern-Aware RAG (The "Industry Knowledge")
-*Goal: Ground the Peer's advice in real-world engineering and product standards.*
+## 3. Fact-First Intelligence (The Compiler)
+*Goal: Deepen the reasoning capabilities of the Peer agent.*
 
-- [ ] **Archetype Library**: Create a library of "Product Archetypes" (e.g., E-commerce, SaaS, Fintech) with mandatory requirements.
-- [ ] **Vector Integration**: Enable `pgvector` to allow the Analyst agent to retrieve relevant technical patterns during the chat.
-- [ ] **Risk Identification**: Pre-load the system with common failure modes (e.g., "Marketplace deal abandonment") to allow the AI to ask proactive mitigation questions.
+- [ ] **Graph-Based Reasoning**: Instead of flat prompts, send the "Fact Graph" (JSON) to the AI so it understands the relationships between features and infra.
+- [ ] **Logic Debugger**: Create an agent that specifically looks for "Red Flags" or contradictions in the project graph.
+- [ ] **Personal Pattern RAG**: Allow the user to upload "Gold Standard" reference PRDs to guide the AI's tone and depth.
 
-## 4. Reverse Extraction (The "Text-Fact Sync")
-*Goal: Keep the Fact Graph in sync with manual document edits.*
+## 4. Personal Workflow Integration
+*Goal: Turn brainstorms into actionable artifacts in your personal tools.*
 
-- [ ] **Edit Monitoring**: Implement a system that detects manual changes in the Markdown documents.
-- [ ] **Reverse Mapping**: Use an AI agent to parse manual edits and update the corresponding nodes in the Fact Graph, maintaining a single source of truth.
+- [ ] **Obsidian/Notion Sync**: Direct export of the Fact Graph into linked notes (Graph-to-Graph sync).
+- [ ] **Live Cost Tracking**: Real-time dashboard showing the exact cost (in cents) of each brainstorming session based on token usage.
+- [ ] **Linear/Jira Backlog Generation**: Turn "Feature Facts" directly into a structured backlog.

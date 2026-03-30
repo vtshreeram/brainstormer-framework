@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useStore } from "@/store/useStore";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { Button, TextArea } from "@/components/ui";
 import { Send, Sparkles, AlertCircle, Plus, Check } from "lucide-react";
 import { FactType } from "@/types/facts";
@@ -14,6 +15,7 @@ const typeIcons: Record<FactType, string> = {
 };
 
 export function BrainstormingChat() {
+  const { user } = useAuth();
   const { 
     chatMessages, 
     processUserBrainstorm, 
@@ -30,10 +32,10 @@ export function BrainstormingChat() {
   }, [chatMessages]);
 
   const handleSend = async () => {
-    if (!input.trim() || isProcessingBrainstorm) return;
+    if (!input.trim() || isProcessingBrainstorm || !user) return;
     const currentInput = input;
     setInput("");
-    await processUserBrainstorm(currentInput);
+    await processUserBrainstorm(user.id, currentInput);
   };
 
   return (

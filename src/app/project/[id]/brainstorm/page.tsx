@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useStore } from "@/store/useStore";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { fetchProjects } from "@/lib/api-client";
 import { BrainstormingChat } from "@/components/ui/BrainstormingChat";
 import { FactGraphExplorer } from "@/components/ui/FactGraphExplorer";
 import { ChevronLeft, Info, Settings, Layout } from "lucide-react";
@@ -11,17 +13,34 @@ import { ChevronLeft, Info, Settings, Layout } from "lucide-react";
 export default function BrainstormPage() {
   const params = useParams();
   const projectId = params.id as string;
-  const { projects, setCurrentProject } = useStore();
+  const { user } = useAuth();
+  const { projects, setProjects, setCurrentProject } = useStore();
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    if (!user) return;
+    try {
+      if (projects.length === 0) {
+        const data = await fetchProjects(user.id);
+        setProjects(data);
+      }
+      setCurrentProject(projectId);
+    } catch (err) {
+      console.error("Failed to load project context:", err);
+    } finally {
+      setIsInitialLoading(false);
+    }
+  }, [user, projectId, projects.length, setProjects, setCurrentProject]);
 
   useEffect(() => {
-    if (projectId) {
-      setCurrentProject(projectId);
+    if (user) {
+      loadData();
     }
-  }, [projectId, setCurrentProject]);
+  }, [user, loadData]);
 
   const project = projects.find((p) => p.id === projectId);
 
-  if (!project) {
+  if (isInitialLoading || !project) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { getProjectById } from '@/lib/db/projects';
 import { FactExtractionResult } from '@/types/facts';
-
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
-
-function getOpenAIClient(): OpenAI {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY environment variable is not set');
-  }
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-}
+import { aiOrchestrator, AIOrchestrator } from '@/lib/ai/orchestrator';
 
 const SYSTEM_PROMPT = `
 You are a "Panel of AI Experts" (Product Manager, Solutions Architect, and Security Lead) for the Brainstormer Framework. 
@@ -73,26 +62,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const openai = getOpenAIClient();
-    
     const userPrompt = `
-CURRENT GRAPH STATE: ${JSON.stringify(currentGraph || {})}
-NEW USER INPUT: "${userInput}"
+    CURRENT GRAPH STATE: ${JSON.stringify(currentGraph || {})}
+    NEW USER INPUT: "${userInput}"
 
-Analyze the input, update the graph, identify logic gaps, and suggest 2-3 deep-thinking follow-up questions.
+    Analyze the input, update the graph, identify logic gaps, and suggest 2-3 deep-thinking follow-up questions.
     `;
 
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-    });
+    // Fetch personal AI settings
+    const { rows: settingsRows } = await query(
+      `SELECT settings FROM private.user_ai_settings WHERE user_id = $1`,
+      [userId]
+    );
+    
+    const config = settingsRows[0]?.settings || AIOrchestrator.getDefaultConfig();
 
-    const result = JSON.parse(completion.choices[0]?.message?.content || '{}') as FactExtractionResult;
+    const responseContent = await aiOrchestrator.runRole(
+      'synthesizer',
+      [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt }
+      ],
+      config,
+      { responseFormat: 'json', temperature: 0.2 }
+    );
+
+    const result = JSON.parse(responseContent || '{}') as FactExtractionResult;
 
     return NextResponse.json(result);
   } catch (error: unknown) {
