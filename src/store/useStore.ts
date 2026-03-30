@@ -15,6 +15,17 @@ import {
   documentOptions as defaultDocOptions,
 } from "@/data/mockData";
 
+import { Fact, FactGraph, Relationship, FactExtractionResult } from "@/types/facts";
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system_peer";
+  content: string;
+  timestamp: string;
+  suggestions?: string[];
+  suggestedFacts?: Partial<Fact>[];
+}
+
 interface AppState {
   projects: Project[];
   currentProjectId: string | null;
@@ -27,10 +38,21 @@ interface AppState {
   isNewProjectModalOpen: boolean;
   newProjectTitle: string;
 
+  // New Fact-First State
+  factGraph: FactGraph;
+  chatMessages: ChatMessage[];
+  isProcessingBrainstorm: boolean;
+
   setProjects: (projects: Project[]) => void;
   setCurrentProject: (projectId: string | null) => void;
   setCurrentVersion: (versionId: string | null) => void;
   setCurrentStep: (step: number) => void;
+
+  // New Actions
+  processUserBrainstorm: (input: string) => Promise<void>;
+  addFact: (fact: Omit<Fact, "id" | "createdAt" | "updatedAt">) => void;
+  removeFact: (factId: string) => void;
+  updateFact: (factId: string, updates: Partial<Fact>) => void;
 
   createProject: (title: string, description?: string) => Project;
   deleteProject: (projectId: string) => void;
@@ -101,6 +123,11 @@ export const useStore = create<AppState>()(
     aiSuggestions: {},
     isLoadingSuggestions: false,
 
+    // New State Init
+    factGraph: { facts: [], relationships: [] },
+    chatMessages: [],
+    isProcessingBrainstorm: false,
+
     setProjects: (projects) => set({ projects }),
 
     setCurrentProject: (projectId) => {
@@ -122,6 +149,112 @@ export const useStore = create<AppState>()(
 
       setCurrentStep: (step) => {
         set({ currentStep: step });
+      },
+
+      addFact: (factData) => {
+        const newFact: Fact = {
+          ...factData,
+          id: `fact_${uuidv4().slice(0, 8)}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as Fact;
+        set((state) => ({
+          factGraph: {
+            ...state.factGraph,
+            facts: [...state.factGraph.facts, newFact],
+          },
+        }));
+      },
+
+      removeFact: (factId) => {
+        set((state) => ({
+          factGraph: {
+            facts: state.factGraph.facts.filter((f) => f.id !== factId),
+            relationships: state.factGraph.relationships.filter(
+              (r) => r.sourceFactId !== factId && r.targetFactId !== factId,
+            ),
+          },
+        }));
+      },
+
+      updateFact: (factId, updates) => {
+        set((state) => ({
+          factGraph: {
+            ...state.factGraph,
+            facts: state.factGraph.facts.map((f) =>
+              f.id === factId
+                ? { ...f, ...updates, updatedAt: new Date().toISOString() } as Fact
+                : f,
+            ),
+          },
+        }));
+      },
+
+      processUserBrainstorm: async (input) => {
+        const state = get();
+        const userMessage: ChatMessage = {
+          id: uuidv4(),
+          role: "user",
+          content: input,
+          timestamp: new Date().toISOString(),
+        };
+
+        set((state) => ({
+          chatMessages: [...state.chatMessages, userMessage],
+          isProcessingBrainstorm: true,
+        }));
+
+        try {
+          const response = await fetch("/api/facts/extract", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-user-id": "user_001", // Placeholder
+            },
+            body: JSON.stringify({
+              projectId: state.currentProjectId,
+              userInput: input,
+              currentGraph: state.factGraph,
+            }),
+          });
+
+          if (!response.ok) throw new Error("Failed to process brainstorm");
+
+          const result: FactExtractionResult = await response.json();
+
+          const assistantMessage: ChatMessage = {
+            id: uuidv4(),
+            role: "assistant",
+            content: result.suggestedQuestions[0] || "Got it. Tell me more about your vision.",
+            timestamp: new Date().toISOString(),
+            suggestions: result.suggestedQuestions.slice(1),
+            suggestedFacts: result.facts as any,
+          };
+
+          // Batch update facts from the extraction
+          const newFacts = result.facts.map(f => ({
+            ...f,
+            id: `fact_${uuidv4().slice(0, 8)}`,
+            projectId: state.currentProjectId || "",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })) as Fact[];
+
+          set((state) => ({
+            chatMessages: [...state.chatMessages, assistantMessage],
+            factGraph: {
+              ...state.factGraph,
+              facts: [...state.factGraph.facts, ...newFacts],
+            },
+            isProcessingBrainstorm: false,
+          }));
+
+          state.addToast({ message: `Extracted ${newFacts.length} new facts`, type: "success" });
+        } catch (error) {
+          console.error("Error processing brainstorm:", error);
+          set({ isProcessingBrainstorm: false });
+          state.addToast({ message: "Failed to analyze brainstorm", type: "error" });
+        }
       },
 
       createProject: (title, description) => {
