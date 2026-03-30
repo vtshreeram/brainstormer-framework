@@ -1,37 +1,54 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getMockStepData, simulateDelay } from "@/data/mockAiResponses";
+import { NextRequest, NextResponse } from 'next/server';
+import { aiOrchestrator } from '@/lib/ai/orchestrator';
+import { getUserAIConfig } from '@/lib/ai/getUserConfig';
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = request.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { question, current_step, follow_up_question } = body;
 
     if (!question || !current_step) {
       return NextResponse.json(
-        {
-          error:
-            "Missing required fields: question and current_step are required.",
-        },
-        { status: 400 },
+        { error: 'Missing required fields: question and current_step are required.' },
+        { status: 400 }
       );
     }
 
-    // Simulate realistic network latency
-    await simulateDelay(400, 900);
+    const config = await getUserAIConfig(userId);
 
-    const mockData = getMockStepData(current_step);
+    const targetQuestion = follow_up_question || question;
+    const context = follow_up_question
+      ? `The user is answering a follow-up question in the "${current_step}" step of a product discovery wizard.
+Original question: "${question}"
+Follow-up question: "${follow_up_question}"`
+      : `The user is answering the "${current_step}" step of a product discovery wizard.
+Question: "${question}"`;
 
-    // If a follow-up question was passed, answer that instead of the main question
-    const answer = follow_up_question
-      ? mockData.followUpAnswer
-      : mockData.mainAnswer;
+    const prompt = `${context}
 
-    return NextResponse.json({ answer });
-  } catch (error: any) {
-    console.error("[auto-answer mock] Error:", error?.message || error);
+Generate a realistic, specific, and thoughtful example answer that a real founder might give.
+The answer should be 2-4 sentences, concrete, and directly address the question.
+Do not add preamble or explanation — output only the answer text.`;
+
+    const answer = await aiOrchestrator.runRole(
+      'pm',
+      [{ role: 'user', content: prompt }],
+      config,
+      { temperature: 0.7 }
+    );
+
+    return NextResponse.json({ answer: answer.trim() });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[auto-answer] Error:', message);
     return NextResponse.json(
-      { error: "An unexpected error occurred. Please try again." },
-      { status: 500 },
+      { error: 'An unexpected error occurred. Please try again.' },
+      { status: 500 }
     );
   }
 }

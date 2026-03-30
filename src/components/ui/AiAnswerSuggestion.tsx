@@ -171,7 +171,7 @@ export function AiAnswerSuggestion({
         <div
           className="
             flex items-center gap-3 px-4 py-3
-            bg-violet-50 border border-violet-200 rounded-lg
+            bg-violet-50 border border-violet-200 rounded-none
             animate-in fade-in
           "
         >
@@ -192,7 +192,7 @@ export function AiAnswerSuggestion({
     <div className={`mt-3 ${className}`}>
       <div
         className="
-          bg-violet-50 border border-violet-200 rounded-lg
+          bg-violet-50 border border-violet-200 rounded-none
           overflow-hidden animate-in fade-in
         "
       >
@@ -216,7 +216,7 @@ export function AiAnswerSuggestion({
             onClick={onDismiss}
             title="Dismiss suggestion"
             className="
-              p-0.5 rounded text-violet-400
+              p-0.5 rounded-none text-violet-400
               hover:text-violet-600 hover:bg-violet-200/60
               transition-colors duration-150
               focus:outline-none focus:ring-2 focus:ring-violet-400

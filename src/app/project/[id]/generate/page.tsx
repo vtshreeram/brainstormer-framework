@@ -3,60 +3,105 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useStore } from '@/store/useStore';
+import { fetchProject, generateDocumentWithAI, createDocument } from '@/lib/api-client';
 import { Button } from '@/components/ui';
 import { DocumentType } from '@/types';
 import { FileText, LayoutTemplate, PenTool, Link2, Map } from 'lucide-react';
+import { Project } from '@/types';
+
+const allDocumentTypes: { type: DocumentType; icon: React.ReactNode; label: string; desc: string }[] = [
+  { type: 'prd', icon: <FileText className="w-5 h-5 text-gray-700" />, label: 'Product Requirements Document', desc: 'Problem statement, personas, feature specs, success metrics' },
+  { type: 'architecture', icon: <LayoutTemplate className="w-5 h-5 text-gray-700" />, label: 'Technical Architecture', desc: 'Stack recommendations, data model, system diagram' },
+  { type: 'user_stories', icon: <PenTool className="w-5 h-5 text-gray-700" />, label: 'User Stories & Acceptance Criteria', desc: 'Prioritized stories with clear acceptance criteria' },
+  { type: 'api_spec', icon: <Link2 className="w-5 h-5 text-gray-700" />, label: 'API Specifications', desc: 'Endpoints, authentication, rate limiting' },
+  { type: 'roadmap', icon: <Map className="w-5 h-5 text-gray-700" />, label: 'Implementation Roadmap', desc: 'MVP phase, secondary features, sequencing rationale' },
+];
 
 export default function GeneratePage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
-  
-  const {
-    projects,
-    selectedDocuments,
-    toggleDocumentSelection,
-    generateDocuments,
-    setCurrentProject,
-    isGenerating,
-    addToast
-  } = useStore();
-  
-  const project = projects.find(p => p.id === projectId);
-  const [isGeneratingLocal, setIsGeneratingLocal] = useState(false);
-  
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedTypes, setSelectedTypes] = useState<Set<DocumentType>>(new Set<DocumentType>(['prd' as DocumentType]));
+  const [generatingTypes, setGeneratingTypes] = useState<Set<DocumentType>>(new Set());
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+
   useEffect(() => {
-    if (projectId) {
-      setCurrentProject(projectId);
-    }
-  }, [projectId, setCurrentProject]);
-  
-  if (!project) {
-    return <div>Loading...</div>;
-  }
-  
+    if (!projectId) return;
+    setIsLoading(true);
+    fetchProject(projectId)
+      .then((p) => {
+        setProject(p);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
+  }, [projectId]);
+
+  const toggleType = (type: DocumentType) => {
+    setSelectedTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  };
+
   const handleGenerate = async () => {
-    setIsGeneratingLocal(true);
-    
-    // Removed artificial delay
-    
-    generateDocuments();
-    
-    addToast({ type: 'success', message: 'Documents generated successfully!' });
+    if (selectedTypes.size === 0) return;
+    setIsGeneratingAll(true);
+
+    const currentVersion = project?.versions.find((v) => v.isCurrent);
+
+    for (const docType of Array.from(selectedTypes)) {
+      setGeneratingTypes((prev) => new Set(prev).add(docType));
+      try {
+        const result = await generateDocumentWithAI(
+          projectId,
+          docType,
+          project?.title || '',
+          currentVersion?.responses || {},
+        );
+        await createDocument(projectId, docType, result.title, result.content, result.promptVersion, result.modelId);
+      } catch (e) {
+        console.error(`Failed to generate ${docType}:`, e);
+      }
+      setGeneratingTypes((prev) => {
+        const next = new Set(prev);
+        next.delete(docType);
+        return next;
+      });
+    }
+
+    setIsGeneratingAll(false);
     router.push(`/project/${projectId}/documents`);
   };
-  
-  const documentTypes = [
-    { type: 'prd' as DocumentType, icon: <FileText className="w-5 h-5 text-gray-700" />, label: 'Product Requirements Document', desc: 'Problem statement, personas, feature specs, success metrics' },
-    { type: 'architecture' as DocumentType, icon: <LayoutTemplate className="w-5 h-5 text-gray-700" />, label: 'Technical Architecture', desc: 'Stack recommendations, data model, system diagram' },
-    { type: 'user_stories' as DocumentType, icon: <PenTool className="w-5 h-5 text-gray-700" />, label: 'User Stories & Acceptance Criteria', desc: 'Prioritized stories with clear acceptance criteria' },
-    { type: 'api_spec' as DocumentType, icon: <Link2 className="w-5 h-5 text-gray-700" />, label: 'API Specifications', desc: 'Endpoints, authentication, rate limiting' },
-    { type: 'roadmap' as DocumentType, icon: <Map className="w-5 h-5 text-gray-700" />, label: 'Implementation Roadmap', desc: 'MVP phase, secondary features, sequencing rationale' }
-  ];
-  
-  const selectedCount = selectedDocuments.filter(d => d.selected).length;
-  
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">Project not found</p>
+      </div>
+    );
+  }
+
+  const selectedCount = selectedTypes.size;
+  const generatedTypes = new Set<DocumentType>(project.generatedDocuments.map((d) => d.type as DocumentType));
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -74,28 +119,28 @@ export default function GeneratePage() {
           </div>
         </div>
       </header>
-      
+
       <main className="max-w-3xl mx-auto px-6 py-8">
         <div className="card p-6 mb-6">
           <p className="text-gray-600 mb-4">
-            Based on your discovery responses, we can generate the following documents. 
+            Based on your discovery responses, we can generate the following documents.
             Select the ones you need for your project.
           </p>
-          
+
           <div className="space-y-3">
-            {documentTypes.map(({ type, icon, label, desc }) => {
-              const isSelected = selectedDocuments.find(d => d.type === type)?.selected;
-              
+            {allDocumentTypes.map(({ type, icon, label, desc }) => {
+              const isSelected = selectedTypes.has(type);
+              const isGenerated = generatedTypes.has(type);
+              const isLoading = generatingTypes.has(type);
+
               return (
                 <button
                   key={type}
-                  onClick={() => toggleDocumentSelection(type)}
+                  onClick={() => !isGenerated && toggleType(type)}
+                  disabled={isGenerated}
                   className={`
                     w-full p-4 border-2 text-left transition-all
-                    ${isSelected 
-                      ? 'border-primary-600 bg-primary-10' 
-                      : 'border-gray-200 hover:border-gray-300'
-                    }
+                    ${isGenerated ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed' : isSelected ? 'border-primary-600 bg-primary-10' : 'border-gray-200 hover:border-gray-300'}
                   `}
                 >
                   <div className="flex items-start gap-4">
@@ -113,6 +158,9 @@ export default function GeneratePage() {
                       <div className="flex items-center gap-2">
                         <span className="text-xl">{icon}</span>
                         <span className="font-semibold text-gray-900">{label}</span>
+                        {isGenerated && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Generated</span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-500 mt-1">{desc}</p>
                     </div>
@@ -122,19 +170,19 @@ export default function GeneratePage() {
             })}
           </div>
         </div>
-        
+
         <div className="flex justify-between items-center">
           <Link href={`/project/${projectId}/review`}>
             <Button variant="secondary">Back to Review</Button>
           </Link>
-          
-          <Button 
-            onClick={handleGenerate} 
-            disabled={selectedCount === 0}
-            isLoading={isGeneratingLocal}
+
+          <Button
+            onClick={handleGenerate}
+            disabled={selectedCount === 0 || isGeneratingAll}
+            isLoading={isGeneratingAll}
           >
-            {isGeneratingLocal ? 'Generating...' : `Generate ${selectedCount > 0 ? `${selectedCount} ` : ''}Document${selectedCount !== 1 ? 's' : ''}`}
-            {!isGeneratingLocal && (
+            {isGeneratingAll ? 'Generating...' : `Generate ${selectedCount > 0 ? `${selectedCount} ` : ''}Document${selectedCount !== 1 ? 's' : ''}`}
+            {!isGeneratingAll && (
               <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>

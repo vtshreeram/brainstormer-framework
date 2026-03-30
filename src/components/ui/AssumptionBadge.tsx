@@ -47,7 +47,7 @@ export function AssumptionBadge({
   if (compact) {
     return (
       <span className={`
-        inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium border
+        inline-flex items-center gap-1.5 px-2 py-1 rounded-none text-xs font-medium border
         ${assumption.confirmed ? 'bg-green-50 border-green-200 text-green-700' : typeColors[assumption.type]}
       `}>
         {assumption.confirmed ? (

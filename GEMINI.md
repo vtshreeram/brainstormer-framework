@@ -1,18 +1,23 @@
 # Brainstormer Framework - AI Agent Context
 
 ## Project Overview
-Brainstormer is a Next.js 14 web application designed as a structured product discovery and documentation generation tool. It guides users (founders, PMs, developers) through a 7-step discovery wizard and auto-generates developer-ready documents like PRDs, Technical Architecture, User Stories, API Specs, and Implementation Roadmaps based on their answers.
+Brainstormer is a full-stack Next.js 14 web application designed as a structured product discovery and documentation generation tool. It guides users through a discovery wizard and auto-generates developer-ready documents powered by OpenAI.
 
-Currently, the application operates purely on the frontend, utilizing static templates and persisting data via browser `localStorage`. However, there is a comprehensive architectural plan (`knowledge_base.md`) to transition this into a self-learning, AI-driven system powered by Supabase, pgvector, and LLM APIs.
+The application has migrated from a pure frontend/localStorage model to a full-stack architecture utilizing:
+- **Next.js API Routes** for backend logic.
+- **PostgreSQL (Neon/NeonDB)** for persistent storage of projects, versions, and documents.
+- **OpenAI API** for dynamic document generation and AI-assisted improvements.
 
 ## Technology Stack
 - **Framework:** Next.js 14.2.5 (App Router)
 - **UI/Components:** React 18.3.1
 - **Language:** TypeScript 5.5.4
-- **Styling:** Tailwind CSS 3.4.7 (currently migrating to an IBM Carbon-inspired visual language)
-- **State Management:** Zustand 4.5.4 (with `persist` middleware)
+- **Styling:** Tailwind CSS 3.4.7 (IBM Carbon-inspired)
+- **Database:** PostgreSQL (via `pg` pool)
+- **AI:** OpenAI SDK
+- **State Management:** Zustand 4.5.4 (used for transient UI state and toast notifications)
 - **Markdown Rendering:** `react-markdown` 9.0.1
-- **Package Manager:** Bun (inferred from `bun.lock`) / npm
+- **Package Manager:** Bun / npm
 
 ## Building and Running
 

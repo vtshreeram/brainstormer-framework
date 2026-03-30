@@ -3,93 +3,121 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useStore } from '@/store/useStore';
+import { fetchProject, updateProjectDetails, restoreProjectVersion, deleteProject as apiDeleteProject } from '@/lib/api-client';
 import { formatDate } from '@/data/mockData';
 import { Button, Modal } from '@/components/ui';
+import { Project } from '@/types';
+import { useStore } from '@/store/useStore';
 
 export default function SettingsPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
-  
-  const {
-    projects,
-    setCurrentProject,
-    deleteProject,
-    updateProject,
-    restoreVersion,
-    addToast
-  } = useStore();
-  
-  const project = projects.find(p => p.id === projectId);
-  
-  const [title, setTitle] = useState(project?.title || '');
-  const [description, setDescription] = useState(project?.description || '');
+  const addToast = useStore((state) => state.addToast);
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [titleError, setTitleError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [restoreTargetId, setRestoreTargetId] = useState<string | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
 
-  const isSaveDisabled =
-    !title.trim() ||
-    (title === project?.title && description === (project?.description || ''));
-  
   useEffect(() => {
-    if (projectId) {
-      setCurrentProject(projectId);
-    }
-  }, [projectId, setCurrentProject]);
-  
-  useEffect(() => {
-    if (project) {
-      setTitle(project.title);
-      setDescription(project.description || '');
-    }
-  }, [project]);
-  
-  if (!project) {
-    return <div>Loading...</div>;
+    if (!projectId) return;
+    setIsLoading(true);
+    fetchProject(projectId)
+      .then((p) => {
+        setProject(p);
+        setTitle(p.title);
+        setDescription(p.description || '');
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
+  }, [projectId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
-  
-  const handleSave = () => {
+
+  if (!project) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">Project not found</p>
+      </div>
+    );
+  }
+
+  const handleSave = async () => {
     if (!title.trim()) {
       setTitleError('Project title is required.');
       return;
     }
     setTitleError('');
-    updateProject(projectId, { title: title.trim(), description: description.trim() });
-    addToast({ type: 'success', message: 'Project details saved.' });
+    setIsSaving(true);
+    try {
+      const updated = await updateProjectDetails(projectId, {
+        title: title.trim(),
+        description: description.trim(),
+      });
+      setProject(updated);
+      addToast({ message: 'Project details updated successfully', type: 'success' });
+    } catch (e) {
+      console.error('Failed to save:', e);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleGenerateShareLink = () => {
     const token = Math.random().toString(36).substring(2, 15);
     setShareLink(`${window.location.origin}/share/${token}`);
-    addToast({ type: 'success', message: 'Share link generated!' });
   };
-  
+
   const handleCopyShareLink = () => {
     if (shareLink) {
       navigator.clipboard.writeText(shareLink);
-      addToast({ type: 'success', message: 'Link copied to clipboard!' });
     }
   };
-  
-  const handleDeleteProject = () => {
+
+  const handleDeleteProject = async () => {
     setIsDeleting(true);
-    deleteProject(projectId);
-    addToast({ type: 'success', message: 'Project deleted' });
-    router.push('/');
+    try {
+      await apiDeleteProject(projectId);
+      router.push('/');
+    } catch (e) {
+      console.error('Failed to delete:', e);
+      setIsDeleting(false);
+    }
   };
 
-  const handleRestoreVersion = () => {
+  const handleRestoreVersion = async () => {
     if (!restoreTargetId) return;
-    restoreVersion(projectId, restoreTargetId);
-    setRestoreTargetId(null);
-    addToast({ type: 'success', message: 'Version restored successfully.' });
-    router.push(`/project/${projectId}`);
+    setIsRestoring(true);
+    try {
+      const updated = await restoreProjectVersion(projectId, restoreTargetId);
+      setProject(updated);
+      setRestoreTargetId(null);
+      addToast({ message: 'Version restored successfully', type: 'success' });
+      router.push(`/project/${projectId}`);
+    } catch (e) {
+      console.error('Failed to restore:', e);
+      addToast({ message: 'Failed to restore version', type: 'error' });
+    } finally {
+      setIsRestoring(false);
+    }
   };
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -107,11 +135,11 @@ export default function SettingsPage() {
           </div>
         </div>
       </header>
-      
+
       <main className="max-w-3xl mx-auto px-6 py-8">
         <div className="card p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Details</h2>
-          
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -145,25 +173,23 @@ export default function SettingsPage() {
               <Button
                 variant="primary"
                 onClick={handleSave}
-                disabled={isSaveDisabled}
+                disabled={isSaving || (!title.trim() || (title === project.title && description === (project.description || '')))}
+                isLoading={isSaving}
               >
                 Save Changes
               </Button>
             </div>
           </div>
         </div>
-        
+
         <div className="card p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Version History</h2>
-          
+
           <div className="space-y-3">
             {project.versions.map((version) => (
               <div
                 key={version.id}
-                className={`
-                  p-4 border
-                  ${version.isCurrent ? 'border-l-4 border-l-primary-600 border-gray-200 bg-primary-10' : 'border-gray-200 hover:border-gray-300'}
-                `}
+                className={`p-4 border ${version.isCurrent ? 'border-l-4 border-l-primary-600 border-gray-200 bg-primary-10' : 'border-gray-200 hover:border-gray-300'}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -195,10 +221,10 @@ export default function SettingsPage() {
             ))}
           </div>
         </div>
-        
+
         <div className="card p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Sharing</h2>
-          
+
           {shareLink ? (
             <div className="space-y-3">
               <p className="text-sm text-gray-600">
@@ -225,21 +251,21 @@ export default function SettingsPage() {
             </Button>
           )}
         </div>
-        
+
         <div className="card p-6 border-red-200">
           <h2 className="text-lg font-semibold text-red-600 mb-2">Danger Zone</h2>
           <p className="text-sm text-gray-600 mb-4">
             Once you delete a project, there is no going back. All your responses and generated documents will be permanently removed.
           </p>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={() => setShowDeleteConfirm(true)}
           >
             Delete Project
           </Button>
         </div>
       </main>
-      
+
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
@@ -275,7 +301,7 @@ export default function SettingsPage() {
             <Button variant="secondary" onClick={() => setRestoreTargetId(null)}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleRestoreVersion}>
+            <Button variant="primary" onClick={handleRestoreVersion} isLoading={isRestoring}>
               Restore
             </Button>
           </div>

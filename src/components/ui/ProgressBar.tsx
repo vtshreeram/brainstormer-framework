@@ -27,9 +27,9 @@ export function ProgressBar({
       </div>
 
       {/* IBM Carbon: flat track, IBM Blue fill, no radius */}
-      <div className="relative h-1.5 bg-gray-200 overflow-hidden">
+      <div className="relative h-1.5 bg-[#e0e0e0] overflow-hidden">
         <div
-          className="absolute left-0 top-0 h-full bg-primary-600 transition-all duration-500 ease-out"
+          className="absolute left-0 top-0 h-full bg-[#0f62fe] transition-all duration-500 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -43,7 +43,7 @@ export function ProgressBar({
               className={`
                 text-xs px-1 py-0.5 transition-colors font-medium
                 ${index === currentStep
-                  ? 'text-primary-600 border-b-2 border-primary-600'
+                  ? 'text-[#0f62fe] border-b-2 border-[#0f62fe]'
                   : index < currentStep
                     ? 'text-gray-600 hover:text-gray-800 cursor-pointer'
                     : 'text-gray-400 cursor-default'
