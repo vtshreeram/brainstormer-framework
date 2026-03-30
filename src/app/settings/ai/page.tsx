@@ -93,7 +93,7 @@ export default function AiSettingsPage() {
             </Link>
             <div>
               <h1 className="text-lg font-bold text-[#161616]">AI Master Settings</h1>
-              <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Personal BYOK Command Center</p>
+              <p className="text-xs text-gray-500 font-medium">Personal BYOK configuration</p>
             </div>
           </div>
           <Button onClick={handleSave} isLoading={isSaving} className="gap-2">

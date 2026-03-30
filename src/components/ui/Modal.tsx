@@ -51,8 +51,8 @@ export function Modal({
       <div className="flex min-h-full items-center justify-center p-4">
         {/* IBM Carbon: rectangular modal, dark header */}
         <div className={`
-          relative bg-white shadow-2xl w-full ${sizes[size]}
-          animate-in fade-in zoom-in-95
+          relative bg-white border border-gray-200 shadow-md w-full ${sizes[size]}
+          animate-in fade-in
         `}>
           {title && (
             <div className="flex items-center justify-between px-6 py-4 bg-gray-900 border-b border-gray-700">

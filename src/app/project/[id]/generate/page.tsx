@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { fetchProject, generateDocumentWithAI, createDocument } from '@/lib/api-client';
 import { Button } from '@/components/ui';
+import { useStore } from '@/store/useStore';
 import { DocumentType } from '@/types';
 import { FileText, LayoutTemplate, PenTool, Link2, Map } from 'lucide-react';
 import { Project } from '@/types';
@@ -21,11 +22,13 @@ export default function GeneratePage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
+  const { addToast } = useStore();
 
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTypes, setSelectedTypes] = useState<Set<DocumentType>>(new Set<DocumentType>(['prd' as DocumentType]));
   const [generatingTypes, setGeneratingTypes] = useState<Set<DocumentType>>(new Set());
+  const [failedTypes, setFailedTypes] = useState<Set<DocumentType>>(new Set());
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
 
   useEffect(() => {
@@ -56,8 +59,10 @@ export default function GeneratePage() {
   const handleGenerate = async () => {
     if (selectedTypes.size === 0) return;
     setIsGeneratingAll(true);
+    setFailedTypes(new Set());
 
     const currentVersion = project?.versions.find((v) => v.isCurrent);
+    const failed = new Set<DocumentType>();
 
     for (const docType of Array.from(selectedTypes)) {
       setGeneratingTypes((prev) => new Set(prev).add(docType));
@@ -71,6 +76,7 @@ export default function GeneratePage() {
         await createDocument(projectId, docType, result.title, result.content, result.promptVersion, result.modelId);
       } catch (e) {
         console.error(`Failed to generate ${docType}:`, e);
+        failed.add(docType);
       }
       setGeneratingTypes((prev) => {
         const next = new Set(prev);
@@ -80,13 +86,23 @@ export default function GeneratePage() {
     }
 
     setIsGeneratingAll(false);
-    router.push(`/project/${projectId}/documents`);
+    setFailedTypes(failed);
+
+    if (failed.size > 0) {
+      const failedLabels = allDocumentTypes
+        .filter((d) => failed.has(d.type))
+        .map((d) => d.label)
+        .join(', ');
+      addToast({ type: 'error', message: `Failed to generate: ${failedLabels}. Please retry.` });
+    } else {
+      router.push(`/project/${projectId}/documents`);
+    }
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -107,7 +123,7 @@ export default function GeneratePage() {
       <header className="bg-white border-b">
         <div className="max-w-3xl mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
-            <Link href={`/project/${projectId}/review`} className="text-gray-500 hover:text-gray-600">
+            <Link href={`/project/${projectId}/review`} aria-label="Back to review" className="p-2 -ml-2 text-gray-500 hover:text-gray-600">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -121,6 +137,14 @@ export default function GeneratePage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8">
+        {failedTypes.size > 0 && (
+          <div className="card p-4 mb-6 border-red-200 bg-red-50">
+            <p className="text-sm text-red-700 font-medium">
+              Some documents failed to generate. They are re-selected below — click Generate to retry.
+            </p>
+          </div>
+        )}
+
         <div className="card p-6 mb-6">
           <p className="text-gray-600 mb-4">
             Based on your discovery responses, we can generate the following documents.
@@ -131,36 +155,42 @@ export default function GeneratePage() {
             {allDocumentTypes.map(({ type, icon, label, desc }) => {
               const isSelected = selectedTypes.has(type);
               const isGenerated = generatedTypes.has(type);
-              const isLoading = generatingTypes.has(type);
+              const isFailed = failedTypes.has(type);
+              const isCurrentlyGenerating = generatingTypes.has(type);
 
               return (
                 <button
                   key={type}
-                  onClick={() => !isGenerated && toggleType(type)}
-                  disabled={isGenerated}
+                  onClick={() => toggleType(type)}
                   className={`
                     w-full p-4 border-2 text-left transition-all
-                    ${isGenerated ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed' : isSelected ? 'border-primary-600 bg-primary-10' : 'border-gray-200 hover:border-gray-300'}
+                    ${isFailed ? 'border-red-300 bg-red-50' : isSelected ? 'border-primary-600 bg-primary-10' : 'border-gray-200 hover:border-gray-300'}
                   `}
                 >
                   <div className="flex items-start gap-4">
                     <div className={`
-                      w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5
+                      w-6 h-6 rounded-none flex items-center justify-center flex-shrink-0 mt-0.5
                       ${isSelected ? 'bg-primary-600 text-white' : 'bg-gray-200'}
                     `}>
-                      {isSelected && (
+                      {isCurrentlyGenerating ? (
+                        <div className="w-3 h-3 border border-white border-t-transparent animate-spin" />
+                      ) : isSelected ? (
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                      )}
+                      ) : null}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xl">{icon}</span>
                         <span className="font-semibold text-gray-900">{label}</span>
-                        {isGenerated && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Generated</span>
-                        )}
+                        {isFailed ? (
+                          <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 border border-red-200">Failed — retry</span>
+                        ) : isGenerated && !isSelected ? (
+                          <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 border border-green-200">Generated</span>
+                        ) : isGenerated && isSelected ? (
+                          <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 border border-amber-200">Will regenerate</span>
+                        ) : null}
                       </div>
                       <p className="text-sm text-gray-500 mt-1">{desc}</p>
                     </div>

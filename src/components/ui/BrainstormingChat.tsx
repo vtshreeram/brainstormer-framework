@@ -49,7 +49,7 @@ export function BrainstormingChat() {
         {isProcessingBrainstorm && (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-primary-600 rounded-full animate-pulse" />
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Synthesizing...</span>
+            <span className="text-xs text-gray-500 font-medium">Synthesizing...</span>
           </div>
         )}
       </div>

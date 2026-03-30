@@ -10,6 +10,7 @@ import React, {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useStore } from "@/store/useStore";
 import { fetchProject, saveWizardResponse, saveFollowUp, updateProjectStatus } from "@/lib/api-client";
 import { wizardSteps } from "@/data/mockData";
 import {
@@ -31,6 +32,8 @@ export default function WizardPage() {
   const projectId = params.id as string;
   const { user } = useAuth();
 
+  const { addToast } = useStore();
+
   const [project, setProject] = useState<Project | null>(null);
   const [responses, setResponses] = useState<Record<string, Response>>({});
   const [currentStep, setCurrentStep] = useState(0);
@@ -46,10 +49,6 @@ export default function WizardPage() {
 
   const currentStepData = wizardSteps[currentStep];
   const currentResponse = responses[currentStepData?.id];
-
-  const addToast = useCallback((toast: { type: string; message: string }) => {
-    console.log("[toast]", toast.type, toast.message);
-  }, []);
 
   useEffect(() => {
     if (!projectId) return;
@@ -395,7 +394,8 @@ export default function WizardPage() {
   };
 
   const handleStepClick = (step: number) => {
-    if (step <= currentStep) {
+    // Allow jumping to any step that has been visited OR already has an answer
+    if (step <= currentStep || responses[wizardSteps[step]?.id]?.answer) {
       setCurrentStep(step);
     }
   };
@@ -403,7 +403,7 @@ export default function WizardPage() {
   if (isLoadingProject) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -431,7 +431,8 @@ export default function WizardPage() {
             <div className="flex items-center gap-4">
               <Link
                 href={`/project/${projectId}`}
-                className="text-gray-500 hover:text-gray-700"
+                aria-label="Back to project"
+                className="p-2 -ml-2 text-gray-500 hover:text-gray-700"
               >
                 <svg
                   className="w-5 h-5"
@@ -463,7 +464,7 @@ export default function WizardPage() {
               }}
               className="text-sm text-gray-500 hover:text-gray-700"
             >
-              Save & Exit
+              Exit to Project
             </button>
           </div>
         </div>
@@ -568,6 +569,10 @@ export default function WizardPage() {
             <Button variant="secondary" onClick={handleBack}>
               {currentStep > 0 ? "Back" : "Exit"}
             </Button>
+
+            {!canProceed && (
+              <p className="text-xs text-gray-400 text-center">Add a response to continue</p>
+            )}
 
             <div className="flex items-center gap-3">
               {currentStep === wizardSteps.length - 1 ? (

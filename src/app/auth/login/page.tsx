@@ -83,7 +83,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-2 text-center">Demo Credentials</p>
+            <p className="text-xs text-gray-500 font-medium mb-2 text-center">Demo credentials</p>
             <div className="bg-gray-50 p-3 text-xs text-gray-600 space-y-1">
               <p><span className="font-semibold">Email:</span> admin@gmail.com</p>
               <p><span className="font-semibold">Password:</span> password123</p>

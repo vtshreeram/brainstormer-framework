@@ -44,7 +44,7 @@ export default function BrainstormPage() {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent animate-spin mx-auto mb-3" />
           <p className="text-sm text-gray-500">Loading project context...</p>
         </div>
       </div>
@@ -58,13 +58,14 @@ export default function BrainstormPage() {
         <div className="flex items-center gap-4">
           <Link 
             href={`/project/${projectId}`}
+            aria-label="Back to project"
             className="p-2 hover:bg-gray-100 transition-colors"
           >
             <ChevronLeft className="w-5 h-5 text-gray-500" />
           </Link>
           <div className="flex flex-col">
             <h1 className="text-sm font-bold text-[#161616] leading-none">{project.title}</h1>
-            <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold">Strategic Brainstorming</p>
+            <p className="text-xs text-gray-400 mt-0.5">Strategic Brainstorming</p>
           </div>
         </div>
 

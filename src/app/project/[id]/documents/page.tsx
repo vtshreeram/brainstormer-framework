@@ -3,13 +3,13 @@
 import React, {
   useEffect,
   useState,
-  useRef,
   useCallback,
   useMemo,
 } from "react";
 import Link from "next/link";
 import { FileText, LayoutTemplate, PenTool, Link2, Map } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useStore } from "@/store/useStore";
 import {
   fetchProject,
   updateDocumentContent,
@@ -84,7 +84,9 @@ function parseDocumentSections(content: string): ParsedDocument {
 
 export default function DocumentsPage() {
   const params = useParams();
+  const router = useRouter();
   const projectId = params.id as string;
+  const { addToast } = useStore();
 
   const [project, setProject] = useState<Project | null>(null);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
@@ -95,8 +97,6 @@ export default function DocumentsPage() {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [generatingTypes, setGeneratingTypes] = useState<Set<DocumentType>>(new Set());
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
-
-  const autoTriggeredRef = useRef<Set<string>>(new Set());
 
   const fetchProjectData = useCallback(() => {
     if (!projectId) return;
@@ -118,18 +118,7 @@ export default function DocumentsPage() {
     fetchProjectData();
   }, [fetchProjectData]);
 
-  useEffect(() => {
-    if (selectedDocId && project && !autoTriggeredRef.current.has(selectedDocId)) {
-      const doc = project.generatedDocuments.find((d) => d.id === selectedDocId);
-      if (doc) {
-        autoTriggeredRef.current.add(selectedDocId);
-        const currentVersion = project.versions.find((v) => v.isCurrent);
-        const userMetrics = currentVersion?.responses?.["step_7"]?.answer;
-        loadAiSuggestions(selectedDocId, doc.content, userMetrics, doc.type);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDocId, project?.generatedDocuments]);
+  // AI suggestions are loaded on-demand via the "Get AI Suggestions" button — not auto-triggered.
 
   const loadAiSuggestions = useCallback(
     async (docId: string, content: string, userMetrics?: string, docType?: string) => {
@@ -441,9 +430,9 @@ export default function DocumentsPage() {
 
   const handleSectionToast = useCallback(
     (message: string, type: "success" | "info" | "error") => {
-      console.log(`[toast ${type}]`, message);
+      addToast({ message, type });
     },
-    [],
+    [addToast],
   );
 
   const handleSectionActionStart = useCallback((sectionId: string | null) => {
@@ -456,7 +445,7 @@ export default function DocumentsPage() {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent animate-spin mx-auto mb-3" />
           <p className="text-sm text-gray-500">Loading documents…</p>
         </div>
       </div>
@@ -481,7 +470,8 @@ export default function DocumentsPage() {
           <div className="flex items-center gap-4">
             <Link
               href={`/project/${projectId}`}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
+              aria-label="Back to project"
+              className="p-2 -ml-2 text-gray-500 hover:text-gray-700 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

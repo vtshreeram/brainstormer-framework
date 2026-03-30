@@ -109,7 +109,7 @@ export default function ProjectPage() {
         </div>
       </div>
 
-      <header className="bg-white border-b border-b border-gray-200 relative z-10">
+      <header className="bg-white border-b border-gray-200 relative z-10">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex-1">

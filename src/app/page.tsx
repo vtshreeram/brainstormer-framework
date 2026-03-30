@@ -77,6 +77,7 @@ const ProjectCard = ({
   const isCompleted = project.status === "documents_generated" || generatedDocsCount === TOTAL_DOCS;
   const statusLabel = isCompleted ? "Completed" : "In Progress";
   const progressPercentage = Math.min((generatedDocsCount / TOTAL_DOCS) * 100, 100);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
 
   const handleAction = (e: React.MouseEvent, path: string) => {
     e.stopPropagation();
@@ -85,12 +86,16 @@ const ProjectCard = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this project?")) {
-      onDeleteProject(project.id);
-    }
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    setIsDeleteModalOpen(false);
+    onDeleteProject(project.id);
   };
 
   return (
+    <>
     <div
       onClick={() => onOpenProject(project.id)}
       className={`group relative bg-white p-5 cursor-pointer transition-colors duration-150 border ${
@@ -115,35 +120,35 @@ const ProjectCard = ({
         </div>
 
         <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-200 p-0.5 z-10" onClick={(e) => e.stopPropagation()}>
-          <button title="View Dashboard" onClick={(e) => handleAction(e, `/project/${project.id}`)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors">
+          <button title="View Dashboard" onClick={(e) => handleAction(e, `/project/${project.id}`)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-none transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
           </button>
-          <button title="Edit Wizard" onClick={(e) => handleAction(e, `/project/${project.id}/wizard`)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors">
+          <button title="Edit Wizard" onClick={(e) => handleAction(e, `/project/${project.id}/wizard`)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-none transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
           </button>
-          <button title="Brainstorm with AI Peer" onClick={(e) => handleAction(e, `/project/${project.id}/brainstorm`)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded transition-colors">
+          <button title="Brainstorm with AI Peer" onClick={(e) => handleAction(e, `/project/${project.id}/brainstorm`)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-none transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
           </button>
-          <button title="Open PRD" onClick={(e) => handleAction(e, `/project/${project.id}/documents?type=prd`)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors">
+          <button title="Open PRD" onClick={(e) => handleAction(e, `/project/${project.id}/documents?type=prd`)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-none transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </button>
-          <button title="Settings" onClick={(e) => handleAction(e, `/project/${project.id}/settings`)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors">
+          <button title="Settings" onClick={(e) => handleAction(e, `/project/${project.id}/settings`)} className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-none transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </button>
           <div className="w-px h-4 bg-gray-200 mx-1"></div>
-          <button title="Delete" onClick={handleDelete} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+          <button title="Delete" onClick={handleDelete} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-none transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -187,6 +192,28 @@ const ProjectCard = ({
         </Button>
       </div>
     </div>
+
+    {/* Delete confirmation modal */}
+    <Modal
+      isOpen={isDeleteModalOpen}
+      onClose={() => setIsDeleteModalOpen(false)}
+      title="Delete Project"
+    >
+      <div className="space-y-5">
+        <p className="text-sm text-gray-700">
+          Are you sure you want to delete <span className="font-semibold">{project.title}</span>? This action cannot be undone.
+        </p>
+        <div className="flex gap-3 justify-end">
+          <Button variant="secondary" size="sm" onClick={() => setIsDeleteModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" size="sm" onClick={confirmDelete}>
+            Delete
+          </Button>
+        </div>
+      </div>
+    </Modal>
+    </>
   );
 };
 
@@ -300,7 +327,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent animate-spin mx-auto mb-3" />
           <p className="text-sm text-gray-500">Loading...</p>
         </div>
       </div>
@@ -343,8 +370,7 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8 flex flex-col gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Your Projects</h1>
-            <p className="text-gray-500">Manage and track your brainstorming sessions and generated documents.</p>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Your Projects</h1>
           </div>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-2 border border-gray-200">
             <FilterTabs activeFilter={activeFilter} onFilterChange={setActiveFilter} />
@@ -353,14 +379,14 @@ export default function Dashboard() {
         </div>
 
         {projects.length === 0 ? (
-          <div className="bg-white rounded-none border border-dashed border-gray-300 p-16 text-center max-w-2xl mx-auto mt-12 shadow-none">
-            <div className="w-20 h-20 bg-primary-10 flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white border border-dashed border-gray-300 p-12 text-center max-w-2xl mx-auto mt-12">
+            <div className="w-12 h-12 bg-primary-10 flex items-center justify-center mx-auto mb-5">
+              <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">No projects yet</h2>
-            <p className="text-gray-500 mb-8 max-w-md mx-auto text-lg">Start your first brainstorming session to generate product requirements, user stories, and technical architecture.</p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">No projects yet</h2>
+            <p className="text-gray-500 mb-6 max-w-md mx-auto">Start your first brainstorming session to generate product requirements, user stories, and technical architecture.</p>
             <Button size="lg" onClick={() => setNewProjectModalOpen(true)} className="shadow-none">
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -371,7 +397,11 @@ export default function Dashboard() {
         ) : filteredAndSortedProjects.length === 0 ? (
           <div className="text-center py-20">
             <h3 className="text-lg font-medium text-gray-900 mb-1">No projects found</h3>
-            <p className="text-gray-500">We couldn&apos;t find anything matching your search and filter criteria.</p>
+            <p className="text-gray-500">
+              {activeFilter === "Recently Edited"
+                ? "No projects edited in the last 7 days."
+                : "We couldn't find anything matching your search and filter criteria."}
+            </p>
             <Button variant="ghost" className="mt-4" onClick={() => { setSearchQuery(""); setActiveFilter("All"); }}>
               Clear filters
             </Button>
